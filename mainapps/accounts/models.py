@@ -4,21 +4,37 @@ from PIL import Image
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.core.validators import RegexValidator
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-import datetime
-import logging
+from datetime import date
+
 
 from django.conf import settings
-from django.contrib import admin
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, Permission, User,PermissionsMixin
+from django.contrib.auth.models import User,PermissionsMixin
 
-from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+
+
+
+
+
+alphabet_validator = RegexValidator(r'^[a-zA-Z ]*$', 'Only alphabet characters are allowed.')
+zip_code_validator = RegexValidator(r'^[0-9]{6}$', 'The zip code should be of the form DDDDDD.')
+
+
+def adult_validator(date_value):
+    age = (date.today() - date_value).days / 365
+    if age < 18:
+        raise ValidationError('You must be at least 18 years old.')
+
+
+# Create your models here.
+
+
 
 PREFER_NOT_TO_SAY="not_to_mention"
 SEX=(
@@ -26,11 +42,6 @@ SEX=(
     ("female",_("Female")),
 )
 
-class BlacklistedToken(models.Model):
-    token=models.CharField(max_length=250 )
-    blacklisted_at=models.DateTimeField(auto_now=True)
-    def __str__(self) :
-        return self.token
 class UserManager(UserManager):
     def search(self, query=None):
         qs = self.get_queryset()
@@ -52,12 +63,64 @@ class User(AbstractUser, PermissionsMixin):
     picture = models.ImageField(upload_to='profile_pictures/%y/%m/%d/', default='default.png', null=True)
     email = models.EmailField(blank=True, null=True)
     sex=models.CharField(max_length=20,choices=SEX,default=PREFER_NOT_TO_SAY,blank=True,null=True)
-    USER_TYPE=[
-        ("staff",_("Staff")),
-        ("user",_("User")),
-        ("customer",_("Customer")),
-    ]
-    type_of_user=models.CharField(max_length=30,choices=USER_TYPE,default='user',blank=True,null=True)
+    is_customer=models.BooleanField(default=False)
+    is_staff=models.BooleanField(default=False)
+    date_of_birth = models.DateField(
+        validators=[adult_validator], 
+        verbose_name='Date Of Birth',
+        help_text='You must be above 18 years of age.',
+        blank=True,
+        null=True
+    )
+    apt_number = models.CharField(
+        max_length=200, 
+        verbose_name='Apartment Number',
+        help_text='Please enter your apartment number or house number.',
+        blank=True,
+        null=True
+    )
+    street_number = models.CharField(
+        max_length=200, blank=True, null=True, 
+        verbose_name='Street Number',
+        help_text='This field is optional. Please enter your street number.',
+        
+    )
+    street_name = models.CharField(
+        verbose_name='Street Name', 
+        help_text='Enter you Home Address.',
+        max_length=200,
+        blank=True,
+        null=True,
+    )
+    
+    city = models.CharField(
+        max_length=200, validators=[alphabet_validator], 
+        verbose_name='City',
+        help_text='Please enter only alphabets.',
+        null=True,
+        blank=True,
+    )
+    zip_code = models.CharField(
+        max_length=6, 
+        validators=[zip_code_validator], 
+        verbose_name='Zip Code',
+        help_text='Please enter a 6 digit zip code.',
+        null=True,
+        blank=True,
+        )
+    state = models.CharField(
+        max_length=200, validators=[alphabet_validator], 
+        verbose_name='State',
+        help_text='Please enter only alphabets.',
+        null=True,
+        blank=True,
+   )
+    country = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        default='Nigeria',
+    )
     
 
     objects = UserManager()
@@ -76,12 +139,11 @@ class User(AbstractUser, PermissionsMixin):
     def get_user_role(self):
         if self.is_superuser:
             return "Admin"
-        # elif self.is_investor:
-        #     return "Investor"
-        # elif self.is_stakeholder:
-        #     return "Stakeholder"
-        # elif self.is_worker:
-        #     return "Worker"
+        elif self.is_customer:
+            return "Customer"
+        elif self.is_staff:
+            return "Staff"
+        
 
     def get_picture(self):
         try:
@@ -138,3 +200,6 @@ class VerificationCode(models.Model):
             ('can_share_code','Can share code'),
 
         )
+
+
+

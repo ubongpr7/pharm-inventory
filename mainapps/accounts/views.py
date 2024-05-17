@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
 
+from mainapps.accounts.forms import UserCreateForm
 from mainapps.email_system.emails import send_html_email
 
 
@@ -17,8 +18,9 @@ from .models import User,VerificationCode
 
 
 class CreateUser(generic.CreateView):
-    form_class = "UserCreateForm"
-    template_name='accounts/register.html'
+    form_class = UserCreateForm
+    template_name='accounts/create.html'
+    model=User
     success_url= _('accounts/verify')
 class LoginUser(generic.View):
     form_class = 'LoginUserForm'
