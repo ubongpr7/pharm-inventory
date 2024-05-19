@@ -17,11 +17,19 @@ from .models import User,VerificationCode
     
 
 
+
+
+
+
+
+
 class CreateUser(generic.CreateView):
     form_class = UserCreateForm
     template_name='accounts/create.html'
     model=User
     success_url= _('accounts/verify')
+
+
 class LoginUser(generic.View):
     form_class = 'LoginUserForm'
     template_name='accounts/login.html'
@@ -35,6 +43,37 @@ class LoginUser(generic.View):
             form = "LoginUserForm(request, data=request.POST)"
 
 
+def get_verification(request):
+    pass 
+
+def index(request):
+  return render(request, 'index.html')
+  
+def signout(request):
+    logout(request)
+    messages.success(request,'Logout Successful')
+    return redirect('/')
+    
+def signin(request):
+    title='Signin'
+
+    if request.method == 'POST':
+        username = request.POST.get('email')
+        password = request.POST.get('password')
+
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            
+            messages.success(request, 'We have sent a verification code to your email.')
+            request.session['pk']=user.pk
+            request.session["verified "]=False
+
+            return redirect('/account/verification') 
+        else:
+            messages.error(request, 'Invalid username or password.')
+            return render(request ,'authentications.html')
+    return render(request, 'authentications.html',{'title':title})
         
 def send_code(request):
     pk =request.session.get('pk')
@@ -101,7 +140,39 @@ def twofa(request):
                     messages.error(request,"You have entered an invalid code and therefore need to restart Authentication for security reasons")
                     return redirect('/account/signin')
     return render(request,"twofa.html",{'title':title})
-
 def get_verification(request):
     pass 
 
+def register(request):
+    title="Registration"
+    if request.method == 'POST':
+        username = request.POST.get('email1')
+        email = request.POST.get('email2')
+        first_name=request.POST.get('first_name') 
+        last_name=request.POST.get('last_name') 
+        password = request.POST.get('password1')
+        confirm_password = request.POST.get('confirm_password')
+        if not (username and email and password and confirm_password):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'authentication-register.html')
+
+        if password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'authentication-register.html')
+
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists.')
+            return render(request, 'authentication-register.html')
+
+        user = User.objects.create_user(username=username,first_name=first_name,last_name=last_name, email=email, password=password)
+
+        user = authenticate(username=username, password=password)
+        
+        messages.success(request, 'Account created successfully. We have sent a verification code to your email. Use it to verify but do not expose it to anyone!')
+        request.session['pk']=user.pk
+        request.session["verified "]=False
+
+        return redirect('/account/verification')  
+
+    return render(request, 'authentication-register.html',{'title':title})

@@ -9,14 +9,18 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 
+
 from mainapps.common.custom_fields import MoneyField
 from mainapps.common.models import AttributeStore, User
 from mainapps.company.models import Company
+from mainapps.content_type_linking_models.models import Category
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.orders.models import *
 from mainapps.utils.statuses import StockStatus
 from mainapps.utils.generators import generate_batch_code
 from mainapps.utils.validators import validate_batch_code, validate_serial_number
+
+
 
 
 class StockLocationType(models.Model):
@@ -66,9 +70,8 @@ class StockLocationType(models.Model):
         return self.name
 
 
-  
-
 class StockLocation(InventoryMixin,MPTTModel):
+    
     """
     Represents an organizational tree for StockItem objects.
 
@@ -96,14 +99,6 @@ class StockLocation(InventoryMixin,MPTTModel):
         verbose_name = _('Stock Location')
         verbose_name_plural = _('Stock Locations')
 
-    custom_icon = models.CharField(
-        blank=True,
-        null=True,
-        max_length=100,
-        verbose_name=_('Icon'),
-        help_text=_('Icon (optional)'),
-        db_column='icon',
-    )
 
     official = models.ForeignKey(
         User,
@@ -159,7 +154,7 @@ class StockLocation(InventoryMixin,MPTTModel):
             str: String representation of the stock location.
         """
         return str(self.location_type) if self.location_type else 'Unnamed Location'
-   
+
 
 class StockItem(MPTTModel, InventoryMixin):
     """
@@ -198,8 +193,14 @@ class StockItem(MPTTModel, InventoryMixin):
         related_name='children',
         help_text=_('Link to another StockItem from which this StockItem was created'),
     )
-    attributes= GenericRelation(AttributeStore,related_query_name='stockitems')
-
+    attributes= GenericRelation(
+        AttributeStore,
+        related_query_name='stockitems'
+        )
+    category= GenericRelation(
+        Category,
+        related_query_name='stockitems'
+        )
 
     location = TreeForeignKey(
         StockLocation,

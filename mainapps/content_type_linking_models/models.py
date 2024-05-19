@@ -2,6 +2,9 @@ from datetime import timezone
 from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from mptt.models import MPTTModel, TreeForeignKey
+from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 from django.conf import settings
 
@@ -144,6 +147,48 @@ def attachment_upload_path(instance, filename):
     return f'attachments/{instance.attachment.content_type.model}/{instance.attachment.object_id}/{instance.attachment.id}/{instance.id}/{filename}'
 
 
+class Category(GenericModel,MPTTModel):
+
+    name = models.CharField(
+        max_length=200, 
+        unique=True, 
+        help_text='It must be unique', 
+        verbose_name='Category'
+    )
+    slug = models.SlugField(max_length=230, editable=False)
+    is_active = models.BooleanField(default=True)
+    parent = TreeForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        related_name="children",
+        null=True,
+        blank=True
+    )
+
+    class MPTTMeta:
+
+        order_insertion_by = ["name"]
+
+    class Meta:
+
+        ordering = ["name"]
+
+        verbose_name_plural = _("categories")
+
+
+
+    def save(self, *args, **kwargs):
+
+        self.slug = slugify(self.name)
+
+        super(Category, self).save(*args, **kwargs)
+
+
+
+    def __str__(self):
+
+        return self.name
+
 class File(models.Model):
     """
     Model representing individual files associated with an attachment.
@@ -159,7 +204,10 @@ class File(models.Model):
         return f"File for {self.attachment}"
 
 registerable_models=[
-    Attachment
+    Attachment,
+    File,
+    Category,
+    
 ]
 # registerable_models=[UserSubscription,Attachment,Notification,ContentTypeLink]
     
