@@ -1,0 +1,8 @@
+Accounts
+    /accounts/register
+    /accounts/verification
+    /accounts/signin
+
+Inventory:
+    /inventory
+    /inventory/create

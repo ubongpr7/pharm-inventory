@@ -1,0 +1,107 @@
+{% extends "wrapper/base.html" %}
+{% load static %}
+
+{% block more_meta_tags %}
+    
+{% endblock %}
+
+
+
+{% block page_title %}
+      
+{% endblock page_title %}
+
+
+
+
+{% block extra_style %}
+   
+{% endblock extra_style %}
+
+
+
+{% block content %}
+           
+{% endblock content %}
+
+
+
+{% block extra_script %}
+    
+{% endblock extra_script %}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{# Display a form #}
+
+<form action="/url/to/submit/" method="post" class="form">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+    {% endbuttons %}
+</form>
+
+
+
+
+
+
+
+
+
+{# Load the tag library #}
+{% load bootstrap5 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{# Display django.contrib.messages as Bootstrap alerts #}
+{% bootstrap_messages %}
+
+{# Display a form #}
+<form action="/url/to/submit/" method="post" class="form">
+  {% csrf_token %}
+  {% bootstrap_form form %}
+  {% buttons %}
+    <button type="submit" class="btn btn-primary">
+      Submit
+    </button>
+  {% endbuttons %}
+</form>
+
+
+
+
+
+{% for message in messages %}
+<p id="backend-message" >{{ message }}</p>
+{% endfor %}

@@ -25,7 +25,7 @@ from .models import User,VerificationCode
 
 class CreateUser(generic.CreateView):
     form_class = UserCreateForm
-    template_name='accounts/create.html'
+    template_name='reuseable_template/create.html'
     model=User
     success_url= _('accounts/verify')
 
@@ -69,11 +69,11 @@ def signin(request):
             request.session['pk']=user.pk
             request.session["verified "]=False
 
-            return redirect('/account/verification') 
+            return redirect('/accounts/verification') 
         else:
             messages.error(request, 'Invalid username or password.')
-            return render(request ,'authentications.html')
-    return render(request, 'authentications.html',{'title':title})
+            return render(request ,'accounts/login.html')
+    return render(request, 'accounts/login.html',{'title':title})
         
 def send_code(request):
     pk =request.session.get('pk')
@@ -138,7 +138,7 @@ def twofa(request):
                     return redirect('/')
                 else :
                     messages.error(request,"You have entered an invalid code and therefore need to restart Authentication for security reasons")
-                    return redirect('/account/signin')
+                    return redirect('/accounts/signin')
     return render(request,"twofa.html",{'title':title})
 def get_verification(request):
     pass 

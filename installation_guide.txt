@@ -1,0 +1,23 @@
+1. Install Docker from the internet properly
+
+2. Open your Terminal or CMD 
+
+3. Navigate to the root directory at /pharm-inventory 
+
+4. Run the command
+    docker-compose build
+  
+5. Run the command
+    docker-compose run
+
+OR 
+
+
+1. Open CMD and navigate to the project root directory
+
+2. Run the command:
+    python start_project.py
+
+3. Open  http://127.0.0.1:8000/ on the browser
+
+4. Additionally check current_urls.txt file to see other urls

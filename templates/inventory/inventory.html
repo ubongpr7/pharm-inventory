@@ -1,0 +1,50 @@
+{% extends "wrapper/base.html" %}
+{% load static %}
+
+{% block more_meta_tags %}
+    
+{% endblock %}
+
+
+
+{% block page_title %}
+    Inventory Home
+{% endblock page_title %}
+
+
+
+
+{% block extra_style %}
+   
+{% endblock extra_style %}
+
+
+
+{% block content %} 
+    <main class="container mx-auto mt-8">
+        <section class="text-center">
+            <h2 class="text-3xl font-semibold mb-4">Welcome Pharm Praise</h2>
+            <p class="text-lg text-gray-700 mb-8">Your reliable solution for managing pharmacy inventory efficiently.</p>
+            <div class="flex justify-center items-center space-x-4">
+                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50">
+                    <i class="fas fa-box-open mr-2"></i> View Inventory
+                </button>
+                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50">
+                    <i class="fas fa-chart-line mr-2"></i> View Sales
+                </button>
+            </div>
+        </section>
+
+        <section class="mt-8">
+            <!-- Add more sections or content here -->
+        </section>
+    </main>          
+{% endblock content %}
+
+
+
+{% block extra_script %}
+    
+{% endblock extra_script %}
+
+    
