@@ -1,0 +1,162 @@
+{% extends "wrapper/base.html" %}
+{% load static %}
+{% load bootstrap5 %}
+{% block more_meta_tags %}
+{% endblock more_meta_tags %}
+
+{% block page_title %}
+    Inventory Creation
+{% endblock page_title %}
+
+{% block extra_style %}
+{% endblock extra_style %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Create {{ type|title }} Company</h1>
+    <div id="alert"></div>
+    <form id="company-form" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+
+        <h3>Contacts</h3>
+        {{ contacts.management_form }}
+        <div id="contacts-formset">
+            {% for form in contacts %}
+                <div class="form-group">
+                    {% bootstrap_form form %}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-contact" class="btn btn-secondary">Add Contact</button>
+
+        <h3>Addresses</h3>
+        {{ addresses.management_form }}
+        <div id="addresses-formset">
+            {% for form in addresses %}
+                <div class="form-group">
+                    {% bootstrap_form form %}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="add-address" class="btn btn-secondary">Add Address</button>
+
+        <button type="button" id="add-another" class="btn btn-primary">Add Another</button>
+        <button type="button" id="submit-done" class="btn btn-success">Done</button>
+    </form>
+
+    <div id="companies-list">
+        <!-- Companies will be loaded here via AJAX -->
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_script %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    let contactFormCount = '{{ contacts.total_form_count }}';
+    let addressFormCount = '{{ addresses.total_form_count }}';
+
+    function updateFormNumbers(formTemplate, formCount, prefix) {
+        formTemplate.find('input, select, textarea').each(function() {
+            const name = $(this).attr('name').replace(/-\d+-/, `-${formCount}-`);
+            $(this).attr('name', name);
+            const id = $(this).attr('id').replace(/-\d+-/, `-${formCount}-`);
+            $(this).attr('id', id);
+        });
+        formTemplate.find('label').each(function() {
+            const newFor = $(this).attr('for').replace(/-\d+-/, `-${formCount}-`);
+            $(this).attr('for', newFor);
+        });
+    }
+
+    $('#add-contact').click(function() {
+        const formTemplate = $('#contacts-formset .form-group:first').clone();
+        updateFormNumbers(formTemplate, contactFormCount, 'contacts');
+        $('#contacts-formset').append(formTemplate);
+        contactFormCount++;
+    });
+
+    $('#add-address').click(function() {
+        const formTemplate = $('#addresses-formset .form-group:first').clone();
+        updateFormNumbers(formTemplate, addressFormCount, 'addresses');
+        $('#addresses-formset').append(formTemplate);
+        addressFormCount++;
+    });
+
+    function validateForm() {
+        let isValid = true;
+        $('#company-form .form-control').each(function() {
+            if ($(this).prop('required') && $(this).val() === '') {
+                isValid = false;
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        return isValid;
+    }
+
+    function handleFormSubmit(event, url, clearForm) {
+        event.preventDefault();
+        if (!validateForm()) {
+            $('#alert').html('<div class="alert alert-danger">Please fill in all required fields.</div>').show();
+            return;
+        }
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: $('#company-form').serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#alert').html('<div class="alert alert-success">Successfully submitted!</div>').show();
+                    if (clearForm) {
+                        $('#company-form')[0].reset();
+                    } else {
+                        window.location.href = response.redirect_url;
+                    }
+                } else {
+                    $('#alert').html('<div class="alert alert-danger">' + response.errors + '</div>').show();
+                }
+            }
+        });
+    }
+
+    $('#add-another').on('click', function(event) {
+        handleFormSubmit(event, window.location.href, true);
+    });
+
+    $('#submit-done').on('click', function(event) {
+        handleFormSubmit(event, window.location.href, false);
+    });
+
+    setTimeout(function() {
+        $('#alert').fadeOut('slow');
+    }, 10000);
+
+    $('#alert').on('click', '.close', function() {
+        $(this).parent().fadeOut('slow');
+    });
+
+    function fetchCompanies() {
+        $.ajax({
+            url: '{% url "fetch_companies" %}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var companiesList = $('#companies-list');
+                companiesList.empty();
+                data.forEach(function(company) {
+                    companiesList.append('<div><a href="/company/' + company.id + '/">' + company.name + '</a> - ' + company.address__street + '</div>');
+                });
+            }
+        });
+    }
+
+    fetchCompanies();
+});
+</script>
+{% endblock extra_script %}

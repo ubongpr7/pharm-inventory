@@ -1,0 +1,47 @@
+{% load static %}
+{% load bootstrap5 %}
+{% load model_tags %}
+
+{% block html %}
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+{% block head %}
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    {% block more_meta_tags %}
+    {% endblock %}
+    <title>{% block page_title %}{% endblock page_title %}</title>
+    <link href="{% static 'assets/css/un_auth.css' %}" rel="stylesheet"/>
+    <link href="{% static 'assets/css/index.css' %}" rel="stylesheet"/>
+    {% bootstrap_css %}
+    {% block extra_style %}
+    {% endblock extra_style %}
+</head>
+{% endblock head %}
+
+{% block body %}
+<body>
+    
+
+    <div id="page-content-wrapper">
+        {% block content %}
+        {% endblock content %}
+        {% include 'wrapper/footer.html' %}
+    </div>
+
+    {% block script %}
+    <script src="{% static 'assets/js/jQuery.js' %}"></script>
+    <script src="{% static 'assets/js/un_auth.js' %}"></script>
+    {% bootstrap_javascript %}
+
+    {% block extra_script %}
+    {% endblock extra_script %}
+    {% endblock script %}
+</body>
+{% endblock body %}
+</html>
+{% endblock html %}

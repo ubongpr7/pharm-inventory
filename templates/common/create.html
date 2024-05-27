@@ -1,0 +1,98 @@
+{% extends "wrapper/base.html" %}
+{% load static %}
+{% load bootstrap5 %}
+{% block more_meta_tags %}
+{% endblock more_meta_tags %}
+
+{% block page_title %}
+    Inventory Creation
+{% endblock page_title %}
+
+{% block extra_style %}
+{% endblock extra_style %}
+
+{% block content %}
+<div class="container mt-4">
+
+
+
+
+    <div class="row mgb-20">
+        <!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+        
+        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ plural }} </h5>                        
+                                    <div id="list-container" data-url="{{ get_url }}">
+                            
+                                        <!-- Companies will be loaded here via AJAX -->
+                                    </div>
+                                    <nav>
+                                        <ul class="pagination" id="pagination-container"></ul>
+                                    </nav>
+                                    <a href="#" class="btn btn-primary">View All</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        <!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+
+
+    <div class="row">
+    
+        <form method="post" class="form" id="create-form">
+            {% csrf_token %}
+            <br>
+            <div class="col-lg-12 ">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Add new {{ item_name }}</h5>
+
+                        {% for field in form %}
+                        {% if field.name == "inventorycategory" %} 
+                            
+                                    {% bootstrap_field field %}
+                                
+                                    <button type="button" class="btn btn-outline-secondary add-item-btn  add-entry" data-field-name="{{ field.name }}" data-url="{% url 'common:add_item' app_name='inventory' model_name='inventorycategory' %}" onclick="openAddItemTab(this)" >
+                                        Add new category
+                                    </button>
+
+                            <hr>
+                        {% elif field.name == "company" %} 
+                            
+                                    {% bootstrap_field field %}
+                                
+                                    <button type="button" class="btn btn-outline-secondary add-item-btn add-entry" data-field-name="{{ field.name }}" data-url="{% url 'common:add_item' app_name='inventory' model_name='inventorycategory' %}" onclick="openAddItemTab(this)">
+                                        Add new company
+                                    </button>
+
+                            <hr>
+                        {% else %}
+                        {% bootstrap_field field %}
+                        {% endif  %}
+
+                    {% endfor %}
+                    
+
+
+                    </div>
+                </div>
+            </div>
+            <br>
+
+            <div class="d-flex justify-content-between mt-3">
+                <button type="submit" class="btn btn-primary" name="action" value="add_another">Add Another Item</button>
+                <button type="submit" class="btn btn-secondary" name="action" value="done">Done</button>
+            </div>
+        </form>
+   
+    </div>
+    
+</div>
+{% endblock content %}
+
+{% block extra_script %}
+<script type="module" src="{% static 'assets/js/create_ajax.js' %}"></script>
+
+{% endblock extra_script %}

@@ -1,0 +1,45 @@
+
+{% extends "wrapper/base.html" %}
+{% load static %}
+{% load bootstrap5 %}
+{% block more_meta_tags %}
+{% endblock more_meta_tags %}
+
+{% block page_title %}
+    Inventory Creation
+{% endblock page_title %}
+
+{% block extra_style %}
+{% endblock extra_style %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <h1 class="mb-4 t-align-c">Add new {{ item_name }}</h1>
+        <div class="col-lg-6 col-xl-4 col-sm-12">
+            <form method="post" class="form" id="create-form">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="submit" class="btn btn-primary" name="action" value="add_another">Add Another Item</button>
+                    <button type="submit" class="btn btn-secondary" name="action" value="done">Done</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="col-lg-6 col-xl-8 col-sm-12">
+            <div id="list-container" data-url="{{ get_url }}" >
+
+            </div>
+        
+        </div>
+    
+    </div>
+    
+</div>
+{% endblock content %}
+
+{% block extra_script %}
+<script src="{% static 'assets/js/create_ajax.js' %}"></script>
+
+{% endblock extra_script %}

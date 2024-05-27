@@ -28,14 +28,14 @@ THIRD_PARTY_APPS=[
 ]
 CORE_APPS = [
     
-    'mainapps.permit',
     'mainapps.accounts',
     'mainapps.common',
     'mainapps.company',
-    'mainapps.inventory',
-    'mainapps.stock',
     'mainapps.content_type_linking_models',
+    'mainapps.inventory',
     'mainapps.orders',
+    'mainapps.permit',
+    'mainapps.stock',
 ]
 INSTALLED_APPS=[
 ]

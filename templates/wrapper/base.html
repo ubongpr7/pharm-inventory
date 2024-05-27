@@ -1,85 +1,54 @@
 {% load static %}
 {% load bootstrap5 %}
+{% load model_tags %}
 
 {% block html %}
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
 {% block head %}
-   <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
     {% block more_meta_tags %}
-    
     {% endblock %}
-    
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon.png' %}">
-    <title>
-                
-      {% block page_title %}
-      
-      {% endblock page_title %}
-
-  </title>
-
+    <title>{% block page_title %}{% endblock page_title %}</title>
+    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet"/>
     <link href="{% static 'assets/css/index.css' %}" rel="stylesheet"/>
-   {% bootstrap_css %}
-            
-   {% block extra_style %}
-   
-   {% endblock extra_style %}
+    {% bootstrap_css %}
+    {% block extra_style %}
+    {% endblock extra_style %}
 </head>
 {% endblock head %}
-   
-   {% block body %}
-   
-   <body>
-    
-{% bootstrap_messages %}
 
+{% block body %}
+<body>
+    {% bootstrap_messages %}
     <div id="main-wrapper">
-         {% include 'wrapper/header.html' %}
-         {% include 'wrapper/sidebar.html' %}
-          <div class="page-wrapper">
-
-           {% block content %}
-           
-           {% endblock content %}
-           {% include 'wrapper/footer.html' %}
-         </div>
+        {% include 'wrapper/wrap/header.html' %}
+        <div id="wrapper" class="d-flex">
+            {% include 'wrapper/wrap/sidebar.html' %}
+            <div id="page-content-wrapper">
+                {% block content %}
+                {% endblock content %}
+                {% include 'wrapper/footer.html' %}
+            </div>
+        </div>
     </div>
-{% block in_page_scripts %}
 
-{% endblock in_page_scripts %}
-
+    {% block in_page_scripts %}
+    {% endblock in_page_scripts %}
 
     {% block script %}
+    <script src="{% static 'assets/js/jQuery.js' %}"></script>
     <script src="{% static 'assets/js/main.js' %}"></script>
     {% bootstrap_javascript %}
-
     {% block extra_script %}
-    
     {% endblock extra_script %}
-
-    
     {% endblock script %}
-
-    </body>
-   {% endblock body %}
-
+</body>
+{% endblock body %}
 </html>
 {% endblock html %}
-
-
-
-
-
-
-
-
-
-
-

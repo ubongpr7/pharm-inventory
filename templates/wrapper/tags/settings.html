@@ -1,0 +1,11 @@
+{% for app, models in settings_apps %}
+<!-- <li><a class="dropdown-item" href="#">{{ app }}</a></li> -->
+<li class="dropdown-submenu">
+    <a class="dropdown-item dropdown-toggle" href="#">{{ app }}</a>
+    <ul class="dropdown-menu">
+        {% for model in models %}
+        <li><a class="dropdown-item" href="#">{{ model }}</a></li>
+        {% endfor %}
+    </ul>
+</li>
+{% endfor %}

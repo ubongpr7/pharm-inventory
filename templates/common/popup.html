@@ -1,0 +1,98 @@
+<!-- Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">Add Category</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="category-form">
+                    {% csrf_token %}
+                    <!-- Fields for the Category form -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="save-category">Save Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Your main template -->
+{% extends "wrapper/base.html" %}
+{% load static %}
+{% load bootstrap5 %}
+
+{% block extra_style %}
+<link rel="stylesheet" href="{% static 'css/custom.css' %}">
+{% endblock extra_style %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Create {{ type|title }}</h1>
+    <form id="company-form" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+
+        <h3>Contacts</h3>
+        {{ contacts.management_form }}
+        {% for form in contacts %}
+            {% bootstrap_form form %}
+        {% endfor %}
+
+        <h3>Addresses</h3>
+        {{ addresses.management_form }}
+        {% for form in addresses %}
+            {% bootstrap_form form %}
+        {% endfor %}
+        <button type="button" id="add-another" class="btn btn-primary">Add Another</button>
+        <button type="button" id="submit-done" class="btn btn-success">Done</button>
+    </form>
+</div>
+
+<!-- Popup Modal for Adding Entries -->
+<div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="popupModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="popupModalLabel">Add New Entry</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="popupForm" action="{% url 'add_entry_url' %}" method="post">
+                    {% csrf_token %}
+                    <!-- Dynamic form fields will be injected here via AJAX -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" form="popupForm" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_script %}
+<script src="{% static 'js/add_entry.js' %}"></script>
+{% endblock extra_script %}

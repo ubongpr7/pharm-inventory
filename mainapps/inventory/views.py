@@ -1,17 +1,17 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.views.generic import TemplateView,ListView,UpdateView
+from django.urls import reverse
+from django.urls import reverse_lazy
+from django.http import JsonResponse
 from .models import Inventory
 from .forms import InVentoryForm
-from django.views.generic import CreateView,TemplateView
-# Create your views here.
 
-class CreateInventory(CreateView):
-    model= Inventory()
-    template_name='inventory/create.html'
-    form_class= InVentoryForm
-    success_url='/admin'
+
+
 
 class InventoryHome(TemplateView):
     # model= Inventory()
     template_name='inventory/inventory.html'
+
     # form_class= InVentoryForm
     # success_url='/admin'

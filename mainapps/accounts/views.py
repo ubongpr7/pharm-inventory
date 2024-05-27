@@ -7,6 +7,7 @@ from django.views import generic
 from django.contrib import messages
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
 
 
 from mainapps.accounts.forms import UserCreateForm
@@ -16,18 +17,26 @@ from mainapps.email_system.emails import send_html_email
 from .models import User,VerificationCode
     
 
-
-
-
-
-
-
-
 class CreateUser(generic.CreateView):
     form_class = UserCreateForm
-    template_name='reuseable_template/create.html'
+    template_name='reuseable_templates/create.html'
     model=User
     success_url= _('accounts/verify')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['item_name'] = 'User' 
+        context['ajax_url'] = reverse('accounts/signup')  # Set this dynamically
+        return context
+
+class LandingPage(generic.TemplateView):
+    template_name='accounts/landing_page.html'
+
+class LoginPage(generic.TemplateView):
+    template_name='accounts/login.html'
+
+class RegisterPage(generic.TemplateView):
+    template_name='accounts/register.html'
 
 
 class LoginUser(generic.View):

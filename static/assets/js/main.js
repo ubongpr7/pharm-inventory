@@ -1,32 +1,27 @@
-function loadPage(pageName) {
-    // Load content from the specified page
-    const pages = ['home', 'inventory', 'add_inventory', 'notifications', 'patient_folder'];
-    if (pages.includes(pageName)) {
-        fetch(`${pageName}.html`)
-            .then(response => response.text())
-            .then(html => {
-                document.querySelector('.w-4/5').innerHTML = html;
-            })
-            .catch(error => console.error('Error fetching page:', error));
-    } else {
-        console.error('Invalid page name');
-    }
-}
 
-function togglePage(pageName) {
-    // Toggle active class for sidebar buttons
-    const buttons = document.querySelectorAll('.sidebar-button');
-    buttons.forEach(button => {
-        button.classList.remove('text-blue-300');
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('menu-toggle').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('wrapper').classList.toggle('toggled');
+    });
+    
+    // Handle dropdown submenu
+    document.querySelectorAll('.dropdown-submenu > a').forEach(function (element) {
+        element.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const submenu = this.nextElementSibling;
+            if (submenu) {
+                submenu.classList.toggle('show');
+            }
+        });
     });
 
-    const activeButton = document.querySelector(`#${pageName}Button`);
-    activeButton.classList.add('text-blue-300');
-
-    // Load the selected page
-    loadPage(pageName);
-}
-
-// Initial page load
-loadPage('home');
-
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('.dropdown-menu.show').forEach(function (menu) {
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+    });
+});

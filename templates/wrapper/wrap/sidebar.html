@@ -1,0 +1,32 @@
+{% load model_tags %}
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-light" id="sidebar-wrapper">
+    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+        <span class="fs-4">Sidebar</span>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="{% url 'common:home' %}" class="nav-link active" aria-current="page">
+                Home
+            </a>
+        </li>
+        
+        {% model_list %}
+        <li>
+            <a href="{% url 'accounts:land' %}" class="nav-link link-dark">
+                Landing Page
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'accounts:signin' %}" class="nav-link link-dark">
+                Login Page
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'accounts:register' %}" class="nav-link link-dark">
+                Register Page
+            </a>
+        </li>
+    </ul>
+    <hr>
+</div>

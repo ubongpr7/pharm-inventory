@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Unapproved Organizations</h1>
+    <ul class="list-group">
+        {% for organization in unapproved_organizations %}
+            <li class="list-group-item">
+                {{ organization.name }}
+                <a href="{% url 'approve_organization' organization.pk %}" class="btn btn-success btn-sm float-right">Approve</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Approve Organization</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Approve</button>
+    </form>
+</div>
+{% endblock %}
+

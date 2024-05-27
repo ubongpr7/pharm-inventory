@@ -31,3 +31,16 @@
     outline: none;
 }
 
+.t-align-c{
+    text-align: center;
+}
+.pd-10{
+    padding: 20;
+}
+.mgb-20{
+    margin-bottom: 20;
+
+}
+/* .cp-20{
+
+} */

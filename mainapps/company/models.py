@@ -13,12 +13,11 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import  UniqueConstraint
 from django.contrib.contenttypes.fields import GenericRelation
-
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy as __
 
 from mainapps.content_type_linking_models.models import Attachment
-from mainapps.inventory.models import InventoryMixin
 from mainapps.common.models import Country
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.common.settings import  DEFAULT_CURRENCY_CODE, currency_code_mappings
@@ -27,9 +26,9 @@ from mainapps.inventory.helpers.file_editors import UniqueFilename
 
 
 class Company(models.Model):
-    """A Company object represents an external company.
+    """A Company object represents a company.
 
-    It may be a supplier or a customer or a manufacturer (or a combination)
+    It may be the owner's  or  supplier or a customer or a manufacturer (or a combination)
 
     - A supplier is a company from which parts can be purchased
     - A customer is a company to which parts can be sold
@@ -46,6 +45,7 @@ class Company(models.Model):
         - link: Secondary URL e.g. for link to internal Wiki page
         - image: Company image / logo
         - notes: Extra notes about the company
+        - is_customer: boolean value, is this company owned by the user
         - is_customer: boolean value, is this company a customer
         - is_supplier: boolean value, is this company a supplier
         - is_manufacturer: boolean value, is this company a manufacturer
@@ -75,6 +75,7 @@ class Company(models.Model):
         verbose_name=_('Company description'),
         help_text=_('Description of the company'),
         blank=True,
+        null=True,
     )
 
     website = models.URLField(
@@ -104,17 +105,22 @@ class Company(models.Model):
 
     link = models.URLField(
         blank=True,
-        verbose_name=_('Link'),
+        verbose_name=_('Link/Website'),
         help_text=_('Link to external company information or profile'),
     )
 
     attachment= GenericRelation(Attachment,  related_query_name='companies')
-
+    class TypeChoices(models.TextChoices):
+        OWNER="owner","Owner"
+    is_owner = models.BooleanField(
+        default=False,
+    )
     is_customer = models.BooleanField(
         default=False,
         verbose_name=_('is customer'),
         help_text=_('Do you sell items to this company?'),
     )
+
     is_patiant = models.BooleanField(
         default=False,
         verbose_name=_('is patient'),
@@ -122,8 +128,8 @@ class Company(models.Model):
     )
 
     is_supplier = models.BooleanField(
-        default=True,
-        verbose_name=_('is supplier'),
+        default=False,
+        verbose_name=_('Is supplier'),
         help_text=_('Do you purchase items from this company?'),
     )
 
@@ -144,6 +150,26 @@ class Company(models.Model):
         validators=[validate_currency_code],
         choices=currency_code_mappings(),
     )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True, related_name='companies_created',   
+        editable=False
+
+    )
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.created_by = self.request.user
+            # if self.is_owner:
+        super(Company, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f'/company/company_detail/{self.pk}/'
+    def __str__(self):
+        return self.name
 
 
 class Contact(models.Model):
@@ -285,6 +311,9 @@ class Address(models.Model):
         verbose_name_plural = 'Addresses'
         
 
+
+    def __str__(self):
+        return self.title
 
 # class SupplierPart(models.Model):
 #     """

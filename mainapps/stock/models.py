@@ -8,12 +8,13 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
+from django.utils.text import slugify
+from django.utils.crypto import get_random_string
 
 
 from mainapps.common.custom_fields import MoneyField
 from mainapps.common.models import AttributeStore, User
 from mainapps.company.models import Company
-from mainapps.content_type_linking_models.models import Category
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.orders.models import *
 from mainapps.utils.statuses import StockStatus
@@ -21,6 +22,49 @@ from mainapps.utils.generators import generate_batch_code
 from mainapps.utils.validators import validate_batch_code, validate_serial_number
 
 
+
+class StockCategory(MPTTModel):
+
+    name = models.CharField(
+        max_length=200, 
+        unique=True, 
+        help_text='It must be unique', 
+        verbose_name='Category'
+    )
+    slug = models.SlugField(max_length=230, editable=False)
+    is_active = models.BooleanField(default=True)
+    parent = TreeForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        related_name="children",
+        null=True,
+        blank=True
+    )
+    description=models.TextField(blank=True,null=True)
+
+    class MPTTMeta:
+
+        order_insertion_by = ["name"]
+
+    class Meta:
+
+        ordering = ["name"]
+
+        verbose_name_plural = _("categories")
+
+
+
+
+    def save(self, *args, **kwargs):
+
+        self.slug = f"{get_random_string(6)}{slugify(self.name)}-{self.pk}-{get_random_string(5)}"
+
+        super(StockCategory, self).save(*args, **kwargs)
+
+
+    def __str__(self):
+
+        return self.name
 
 
 class StockLocationType(models.Model):
@@ -195,12 +239,15 @@ class StockItem(MPTTModel, InventoryMixin):
     )
     attributes= GenericRelation(
         AttributeStore,
-        related_query_name='stockitems'
+        related_query_name='stock_items'
         )
-    category= GenericRelation(
-        Category,
-        related_query_name='stockitems'
-        )
+    category = models.ForeignKey(
+        StockCategory, 
+        on_delete=models.SET_NULL, 
+        blank=True,
+        null=True,
+        related_name='stock_items'
+    )
 
     location = TreeForeignKey(
         StockLocation,

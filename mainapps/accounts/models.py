@@ -4,12 +4,9 @@ from PIL import Image
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import AbstractUser, UserManager
-from django.core.validators import RegexValidator
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-from datetime import date
 
 
 from django.conf import settings
@@ -18,22 +15,8 @@ from django.contrib.auth.models import User,PermissionsMixin
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-
-
-
-
-alphabet_validator = RegexValidator(r'^[a-zA-Z ]*$', 'Only alphabet characters are allowed.')
-zip_code_validator = RegexValidator(r'^[0-9]{6}$', 'The zip code should be of the form DDDDDD.')
-
-
-def adult_validator(date_value):
-    age = (date.today() - date_value).days / 365
-    if age < 18:
-        raise ValidationError('You must be at least 18 years old.')
-
-
-# Create your models here.
-
+from mainapps.company.models import Company
+from mainapps.inventory.helpers.field_validators import *
 
 
 PREFER_NOT_TO_SAY="not_to_mention"
@@ -58,13 +41,34 @@ def get_upload_path(instance,filename):
     return os.path.join('images','avartar',str(instance.pk,filename))
 
 class User(AbstractUser, PermissionsMixin):
-    phone = models.CharField(max_length=60, blank=True, null=True)
-    address = models.CharField(max_length=60, blank=True, null=True)
-    picture = models.ImageField(upload_to='profile_pictures/%y/%m/%d/', default='default.png', null=True)
+    phone = models.CharField(
+        max_length=60, 
+        blank=True, 
+        null=True
+    )
+    address = models.CharField(
+        max_length=60, 
+        blank=True, 
+        null=True
+    )
+    picture = models.ImageField(
+        upload_to='profile_pictures/%y/%m/%d/', 
+        default='default.png', 
+        null=True
+    
+        )
     email = models.EmailField(blank=True, null=True)
-    sex=models.CharField(max_length=20,choices=SEX,default=PREFER_NOT_TO_SAY,blank=True,null=True)
+    sex=models.CharField(
+        max_length=20,
+        choices=SEX,
+        default=PREFER_NOT_TO_SAY,
+        blank=True,
+        null=True
+    )
     is_customer=models.BooleanField(default=False)
     is_staff=models.BooleanField(default=False)
+    is_main_staff=models.BooleanField(default=False)
+    is_worker=models.BooleanField(default=False)
     date_of_birth = models.DateField(
         validators=[adult_validator], 
         verbose_name='Date Of Birth',
@@ -122,8 +126,38 @@ class User(AbstractUser, PermissionsMixin):
         default='Nigeria',
     )
     
-
+    company=models.ForeignKey(
+        Company, 
+        null=True,
+        on_delete=models.SET_NULL,
+        blank=True,
+        related_name='users'
+        )
     objects = UserManager()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        try:
+            if not self.pk:
+                created_by = kwargs.pop('user', None)
+                print(created_by)
+                if created_by:
+                    if Company.objects.get(created_by=created_by):
+                        self.company=Company.objects.get(created_by=created_by)
+                        self.is_worker=True
+                else:
+                    self.is_main_staff=True        
+        except:
+            pass
+        try:
+            img = Image.open(self.picture.path)
+            if img.height > 300 or img.width > 300:
+                output_size = (300, 300)
+                img.thumbnail(output_size)
+                img.save(self.picture.path)
+        except:
+            pass
+        
 
     @property
     def get_full_name(self):
@@ -154,17 +188,6 @@ class User(AbstractUser, PermissionsMixin):
 
     def get_absolute_url(self):
         return reverse('profile_single', kwargs={'id': self.id})
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        try:
-            img = Image.open(self.picture.path)
-            if img.height > 300 or img.width > 300:
-                output_size = (300, 300)
-                img.thumbnail(output_size)
-                img.save(self.picture.path)
-        except:
-            pass
 
     def delete(self, *args, **kwargs):
         if self.picture.url != settings.MEDIA_URL + 'default.png':

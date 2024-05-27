@@ -7,6 +7,14 @@ from mainapps.permit.permission_decorators import group_required
 # @permission_required('app_label.permision_model')
 # @permission_required('accounts.view_user')
 
+
+
+from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from functools import wraps
+
+
+
 User= settings.AUTH_USER_MODEL
 # @login_required
 def add_to_permision_group(group_name,username):

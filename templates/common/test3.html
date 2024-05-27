@@ -1,0 +1,60 @@
+{% for field in form %}
+    {% if field.name == 'category' %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="input-group">
+                {{ field }}
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-secondary add-entry" data-field-name="{{ field.name }}">
+                        Add
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+        </div>
+    {% endif %}
+{% endfor %}
+
+
+{% for field in form %}
+    {% if field.name == 'category' %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="input-group">
+                {{ field }}
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-secondary add-entry" data-field-name="{{ field.name }}" data-url="{% url 'add_category_form' %}">
+                        Add
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+        </div>
+    {% endif %}
+{% endfor %}
+
+
+{% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <div class="input-group">
+            {{ field }}
+            {% if field.name in add_buttons %}
+            <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary add-item-btn" data-field="{{ field.name }}" data-url="{% url 'add_item' field.name %}" onclick="openAddItemTab(this)">
+                    Add
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+

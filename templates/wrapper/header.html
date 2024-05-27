@@ -1,1 +1,74 @@
-<p>Header</p>
+<header class="header d-flex flex-wrap justify-content-between align-items-center py-3 mb-4 border-bottom">
+    <a href="{% url 'home' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <span class="fs-4">Your Inventory Management System</span>
+    </a>
+
+    <div class="dropdown">
+        <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i>  Profile
+        </a>
+        <ul class="dropdown-menu text-small">
+            <li><a class="dropdown-item" href="#">Settings</a></li>
+            <li><a class="dropdown-item" href="#">Logout</a></li>
+        </ul>
+    </div>
+</header>
+
+
+
+
+
+<div class="d-flex flex-column flex-shrink-0 p-3 sidebar collapsed" id="sidebar">
+    <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <span class="fs-4">Inventory</span>
+    </a>
+    <hr>
+    <ul class="sidebar-nav d-flex flex-column mb-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-inbox-fill"></i>  Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-box-arrow-in-up-right"></i>  Products
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-cart3"></i>  Orders
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-people-fill"></i>  Customers
+            </a>
+        </li>
+        </ul>
+    <hr>
+</div>
+
+
+
+
+
+
+
+
+<script>
+    const sidebarToggle = document.getElementById('sidebar');
+
+    document.querySelector('.dropdown-toggle').addEventListener('click', (event) => {
+        const dropdown = event.target.parentElement;
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    document.querySelector('.sidebar-toggle').addEventListener('click', () => {
+        sidebarToggle.classList.toggle('collapsed');
+    });
+</script>
+
+
+<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">

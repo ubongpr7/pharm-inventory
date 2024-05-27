@@ -1,13 +1,18 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-# from django_countries.fields import CountryField
-# Create your models here.
-
+from mptt.models import MPTTModel, TreeForeignKey
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 from django.conf import settings
 
 from mainapps.content_type_linking_models.models import GenericModel
 User= settings.AUTH_USER_MODEL
+
+
+
+
+
 
 class Country(models.Model):
     country = models.CharField(max_length=30)

@@ -14,5 +14,3 @@ subprocess.run(rf"pip install -r requirements.txt",shell=True)
 subprocess.run(rf"python manage.py makemigrations",shell=True)
 subprocess.run(rf"python manage.py migrate",shell=True)
 subprocess.run(rf"python manage.py runserver",shell=True)
-
-print('you can view the website via http://127.0.0.1:8000/')

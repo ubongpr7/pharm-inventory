@@ -1,0 +1,35 @@
+<li>
+    <a href="#submenu1" class="nav-link link-dark" data-bs-toggle="collapse">
+        Apps
+    </a>
+    {% for app, models in apps_list %}
+        <ul class="collapse nav flex-column ms-1" id="submenu1" data-bs-parent="#sidebar-wrapper">
+            
+            <li>
+                <a href="#{{ app }}" class="nav-link link-dark" data-bs-toggle="collapse">
+                    {{ app }}
+                </a>
+                <ul class="collapse nav flex-column ms-1" id="{{ app }}" data-bs-parent="#submenu1">
+                    {% for model in models %}
+                        {% if  model == 'Company'%}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'company:company_create'  'customer'  %}">Customers</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'company:company_create'  'manufacturer'  %}">Manufacture</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'company:company_create'  'supplier'  %}">Suppliers</a>
+                            </li>
+                        {% else %}
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'common:add_item'  app.lower  model.lower|cut:' '  %}">{{model}}</a>
+                            </li>
+                        {%endif%}
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+    {% endfor %}    
+</li>
