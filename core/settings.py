@@ -24,6 +24,8 @@ DJ_DEFAULT_INSTALLED_APPS=[
 THIRD_PARTY_APPS=[
     "widget_tweaks",
     "bootstrap5",
+    "cities_light",
+    'django_extensions',
     
 ]
 CORE_APPS = [
@@ -33,6 +35,7 @@ CORE_APPS = [
     'mainapps.company',
     'mainapps.content_type_linking_models',
     'mainapps.inventory',
+    'mainapps.management',
     'mainapps.orders',
     'mainapps.permit',
     'mainapps.stock',
@@ -79,6 +82,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
+# AUTHENTICATION_BACKENDS = (
+#     'mainapps.accounts.backends.UserBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+#     'mainapps.management.backends.StaffUserBackend',
+# )
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -92,7 +101,11 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+# CITIES_LIGHT_TRANSLATION_LANGUAGES = ['fr', 'en']
+CITIES_LIGHT_TRANSLATION_LANGUAGES = ['en']
 
+# CITIES_LIGHT_INCLUDE_COUNTRIES = ['FR']
+CITIES_LIGHT_INCLUDE_CITY_TYPES = ['PPL', 'PPLA', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLC', 'PPLF', 'PPLG', 'PPLL', 'PPLR', 'PPLS', 'STLMT',]
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -120,8 +133,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+LOGIN_URL='/accounts/signin'
+LOGIN_REDIRECT_URL='/accounts/signin/?next={url}'
+DEFAULT_REDIEECT_URL='/'
 STATIC_URL = '/static/'
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  
 
 STATICFILES_DIRS=[os.path.join(BASE_DIR,'static')]
@@ -139,3 +155,4 @@ EMAIL_HOST_USER = "ubongpr7@gmail.com"
 EMAIL_HOST_PASSWORD = "nmcmiwlgwdrwesef"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+    

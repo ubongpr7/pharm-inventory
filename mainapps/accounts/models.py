@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db.models import Q
 
 
+from django_countries.fields import CountryField
 
 from django.conf import settings
 from django.contrib.auth.models import User,PermissionsMixin
@@ -15,9 +16,21 @@ from django.contrib.auth.models import User,PermissionsMixin
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from mainapps.company.models import Company
+from mainapps.common.models import Address
+from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.inventory.helpers.field_validators import *
+from django.db import models
 
+class ResidentialAddress(Address):
+    
+    resident = models.OneToOneField(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='residence',
+        editable=False,
+        null=True,
+        blank=True
+    ) 
 
 PREFER_NOT_TO_SAY="not_to_mention"
 SEX=(
@@ -40,24 +53,20 @@ class UserManager(UserManager):
 def get_upload_path(instance,filename):
     return os.path.join('images','avartar',str(instance.pk,filename))
 
-class User(AbstractUser, PermissionsMixin):
+class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
     phone = models.CharField(
         max_length=60, 
         blank=True, 
         null=True
     )
-    address = models.CharField(
-        max_length=60, 
-        blank=True, 
-        null=True
-    )
+    
     picture = models.ImageField(
         upload_to='profile_pictures/%y/%m/%d/', 
         default='default.png', 
         null=True
     
         )
-    email = models.EmailField(blank=True, null=True)
+    email = models.EmailField(blank=False, null=True)
     sex=models.CharField(
         max_length=20,
         choices=SEX,
@@ -65,90 +74,31 @@ class User(AbstractUser, PermissionsMixin):
         blank=True,
         null=True
     )
-    is_customer=models.BooleanField(default=False)
     is_staff=models.BooleanField(default=False)
-    is_main_staff=models.BooleanField(default=False)
-    is_worker=models.BooleanField(default=False)
+    is_subscriber=models.BooleanField(default=False)
+    is_worker=models.BooleanField(default=False, editable=False)
+    is_main = models.BooleanField(editable=False,default=False)
     date_of_birth = models.DateField(
         validators=[adult_validator], 
         verbose_name='Date Of Birth',
         help_text='You must be above 18 years of age.',
         blank=True,
-        null=True
-    )
-    apt_number = models.CharField(
-        max_length=200, 
-        verbose_name='Apartment Number',
-        help_text='Please enter your apartment number or house number.',
-        blank=True,
-        null=True
-    )
-    street_number = models.CharField(
-        max_length=200, blank=True, null=True, 
-        verbose_name='Street Number',
-        help_text='This field is optional. Please enter your street number.',
-        
-    )
-    street_name = models.CharField(
-        verbose_name='Street Name', 
-        help_text='Enter you Home Address.',
-        max_length=200,
-        blank=True,
         null=True,
     )
-    
-    city = models.CharField(
-        max_length=200, validators=[alphabet_validator], 
-        verbose_name='City',
-        help_text='Please enter only alphabets.',
-        null=True,
-        blank=True,
-    )
-    zip_code = models.CharField(
-        max_length=6, 
-        validators=[zip_code_validator], 
-        verbose_name='Zip Code',
-        help_text='Please enter a 6 digit zip code.',
-        null=True,
-        blank=True,
-        )
-    state = models.CharField(
-        max_length=200, validators=[alphabet_validator], 
-        verbose_name='State',
-        help_text='Please enter only alphabets.',
-        null=True,
-        blank=True,
-   )
-    country = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        default='Nigeria',
-    )
-    
-    company=models.ForeignKey(
-        Company, 
-        null=True,
+    profile=models.ForeignKey(
+        'management.CompanyProfile',
         on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        related_name='users'
-        )
+        related_name='staff'
+    )
+    
+    
     objects = UserManager()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        try:
-            if not self.pk:
-                created_by = kwargs.pop('user', None)
-                print(created_by)
-                if created_by:
-                    if Company.objects.get(created_by=created_by):
-                        self.company=Company.objects.get(created_by=created_by)
-                        self.is_worker=True
-                else:
-                    self.is_main_staff=True        
-        except:
-            pass
+
         try:
             img = Image.open(self.picture.path)
             if img.height > 300 or img.width > 300:
@@ -186,8 +136,8 @@ class User(AbstractUser, PermissionsMixin):
             no_picture = settings.MEDIA_URL + 'default.png'
             return no_picture
 
-    def get_absolute_url(self):
-        return reverse('profile_single', kwargs={'id': self.id})
+    # def get_absolute_url(self):
+    #     return reverse('profile_single', kwargs={'id': self.id})
 
     def delete(self, *args, **kwargs):
         if self.picture.url != settings.MEDIA_URL + 'default.png':

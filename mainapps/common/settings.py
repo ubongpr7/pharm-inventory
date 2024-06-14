@@ -1,14 +1,29 @@
-from iso4217 import Currency
 
+from currency_codes import get_all_currencies, Currency
 # Assuming you have a default currency code, let's say 'USD'
-DEFAULT_CURRENCY_CODE = 'USD'
 
 # Function to get the default currency code
-def currency_code_default():
-    return DEFAULT_CURRENCY_CODE
+def DEFAULT_CURRENCY_CODE():
+    currencies: list[Currency] = get_all_currencies()
+    for currency in currencies:
+        if currency.code=="USD":
 
-# Function to get the currency code mappings for choices
+
+            return (currency.code,'USD')
+
+# # Function to get the currency code mappings for choices
+# def currency_code_mappings():
+#     # Use iso4217 library to get currency codes and names
+#     currencies = [(currency, currency.name.upper()) for currency in Currency]
+#     return currencies
+
 def currency_code_mappings():
-    # Use iso4217 library to get currency codes and names
-    currencies = [(currency, currency.name) for currency in Currency]
-    return currencies
+    currencies: list[Currency] = get_all_currencies()
+    # Use iso4217 library to get currency codes and 
+    choices = [(currency.code, currency.name.upper()) for currency in currencies]
+    return choices
+
+# print(currency_code_default())
+
+
+

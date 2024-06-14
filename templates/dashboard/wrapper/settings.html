@@ -1,0 +1,36 @@
+{% load model_tags %}
+<div class="in-dropdown__menu" id="settings">
+    <div class="dropdown-header in-pd-20">
+        <h4>Settings</h4>
+        
+    </div>
+
+    <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+
+            <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'common:home' %}">Home</a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+            <a class="nav-link in-fs-14 in-fw-bld dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Management Settings
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                {% settings user %}
+
+                
+            {% if user.company and user.is_main %}
+            <li class="nav-item">
+                <a class="dropdown-item in-fs-14 in-fw-bld dropdown-toggle" href="{% url 'management:add_staff_user' user.company.encrypted_id %}">Manage Staff </a>
+            </li>
+         {% elif user.is_main %}    
+            <li class="nav-item">
+                <a class="dropdown-item in-fs-14 in-fw-bld dropdown-toggle" href="{% url 'management:company_profile'  %}">Company Profile</a>
+            </li>
+
+        {% endif %} 
+            </ul>
+        
+        {% endif %}
+    </ul>
+</div>

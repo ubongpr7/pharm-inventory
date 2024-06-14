@@ -20,7 +20,7 @@ h1{
 
 body{
 
-     background: black;
+     background: #011627;
 
     /* background-image: url("https://wallpapercave.com/wp/wp2508260.jpg"); */
 
@@ -30,7 +30,8 @@ body{
 
 #header {
 
-    background:crimson;
+    background:#011627;
+    /* background:#011627; */
 
     color: #fff;
 
@@ -60,7 +61,7 @@ div.breadcrumbs {
 
     /* color: #c4dce8; */
 
-    background: firebrick;
+    background: #011627;
 
 }
 
@@ -118,7 +119,7 @@ div.breadcrumbs a:focus, div.breadcrumbs a:hover {
 
 .module caption{
 
-    background: crimson;
+    background: #011627;
 
     
 
@@ -126,7 +127,7 @@ div.breadcrumbs a:focus, div.breadcrumbs a:hover {
 
 .module p{
 
-    background: crimson;
+    background: #011627;
 
     
 

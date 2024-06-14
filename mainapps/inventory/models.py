@@ -12,8 +12,9 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from mainapps.common.models import User
-from mainapps.company.models import Company
+from mainapps.common.models import TypeOf, Unit
+from mainapps.content_type_linking_models.models import UUIDBaseModel
+from mainapps.management.models import CompanyProfile, InventoryPolicy
 
 
 
@@ -26,7 +27,17 @@ class InventoryCategory(MPTTModel):
         max_length=200, 
         unique=True, 
         help_text='It must be unique', 
-        verbose_name='Category'
+        verbose_name='Category name*'
+    )
+    profile=models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=False,
+        editable=False,
+        related_name='inventory_categories',
+        related_query_name='inventory_category'
+
     )
     slug = models.SlugField(max_length=230, editable=False)
     is_active = models.BooleanField(default=True)
@@ -35,7 +46,9 @@ class InventoryCategory(MPTTModel):
         on_delete=models.PROTECT,
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        verbose_name='Parent category',
+        help_text=_('Parent  to which this category falls'),
     )
     description=models.TextField(blank=True,null=True)
 
@@ -48,7 +61,20 @@ class InventoryCategory(MPTTModel):
         ordering = ["name"]
 
         verbose_name_plural = _("categories")
-
+        constraints=[
+            models.UniqueConstraint(fields=['name','profile'],name='unique_name_profile')
+        ]
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Inentory Category"
+        return "Inentory Categories"
+    @property
+    def get_label(self):
+        return 'inventorycategory'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(profile=profile).count()
 
 
 
@@ -60,13 +86,15 @@ class InventoryCategory(MPTTModel):
 
 
     def __str__(self):
+        if self.profile:
 
+            return f'{self.name} {self.profile}'
         return self.name
 
 
 
 
-class Inventory(models.Model):
+class Inventory(InventoryPolicy):
     """
     - Represents an inventory in the system.
     - Attributes:
@@ -81,9 +109,50 @@ class Inventory(models.Model):
     class Meta:
         verbose_name_plural = 'Inventories'
         ordering = ['-created_at']
+        constraints=[
+            models.UniqueConstraint(fields=['name','profile'],name='unique_inventory_name_profile')
+        ]
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Inentory "
+        return "Inentories "
+    @property
+    def get_label(self):
+        return 'inventory'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(profile=profile).count()
 
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+
+    name = models.CharField(
+        max_length=255,
+        blank=False,
+        verbose_name='Inventory name*'
+    
+    )
+    i_type=models.ForeignKey(
+        TypeOf,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=False,
+        limit_choices_to={'which_model':'inventory'},
+        verbose_name='Type of  inventory*',
+    )
+    
+    profile=models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=False,
+        editable=False,
+        related_name='inventories',
+        related_query_name='inventory'
+
+
+    )
+    
+    description = models.TextField(null=True,blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -99,27 +168,26 @@ class Inventory(models.Model):
         null=True,
         related_name='inventories'
     )
-    company=models.ForeignKey(
-        Company,
-        null=True,
+    unit = models.ForeignKey(
+        Unit, 
+        on_delete=models.SET_NULL, 
         blank=True,
-        limit_choices_to={'is_owner': True},
-
-       on_delete=models.SET_NULL,
+        verbose_name='Unit of measurement',
+        help_text='Set unit for items in this inventory e.g pieces,cm,m...',
+        null=True,
+        related_name='inventories'
     )
     
     def get_absolute_url(self):
         return f'/inventory/details/{self.pk}/'
     def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.created_by = self.request.user
-            # if self.created_by:
-            #     if self.created_by.company:
-            #         self.company=self.created_by.company
-        super(Inventory, self).save(*args, **kwargs)
+        return f'{self.name} {self.profile}'
+    
+    def clean(self):
+        if self.minimum_stock_level> self.re_order_point:
+            raise ValidationError({'minimum_stock_level': f'Minimum stock level {self.minimum_stock_level} cannot be greater than Reorder point {self.re_order_point}'})
+        if self.re_order_point> self.re_order_quauntity:
+            raise ValidationError({'re_order_point': f'Reorder stock level {self.re_order_point} cannot be greater than Reorder quantity {self.re_order_quauntity}'})
 
 class InventoryManager(models.Manager):
     """
@@ -140,7 +208,7 @@ class InventoryManager(models.Manager):
         return self.get_queryset().filter(inventory=inventory)
 
 
-class InventoryMixin(models.Model):
+class InventoryMixin(UUIDBaseModel):
     """
     Abstract model providing a common base for models associated with an inventory.
 
@@ -151,7 +219,7 @@ class InventoryMixin(models.Model):
         - objects (InventoryManager): Custom manager for querying objects based on inventory.
     """
 
-    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE)
+    inventory = models.ForeignKey(Inventory, on_delete=models.SET_NULL,null=True)
 
     objects = InventoryManager()
 
@@ -173,23 +241,4 @@ class InventoryMixin(models.Model):
 
 
 
-class PermissionLog(InventoryMixin):
-    """
-    Represents a log entry for user actions within an inventory.
-
-    Attributes:
-        - user (ForeignKey): The user associated with the action.
-        - content_type (ForeignKey): The content type of the related object (Inventory, in this case).
-        - object_id (PositiveIntegerField): The ID of the related object.
-        - inventory (GenericForeignKey): Generic relation to the related inventory.
-        - action (str): The action performed by the user (e.g., View, Edit, Delete).
-        - timestamp (DateTime): The date and time when the action occurred.
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    action = models.CharField(max_length=50)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-
-registerable_models=[PermissionLog,Inventory,InventoryCategory]
+registerable_models=[Inventory,InventoryCategory]

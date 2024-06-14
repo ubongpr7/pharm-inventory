@@ -1,30 +1,52 @@
-<li>
-    <a href="#submenu1" class="nav-link link-dark" data-bs-toggle="collapse">
-        Apps
-    </a>
+{% if user.company  %}
+
     {% for app, models in apps_list %}
         <ul class="collapse nav flex-column ms-1" id="submenu1" data-bs-parent="#sidebar-wrapper">
             
             <li>
-                <a href="#{{ app }}" class="nav-link link-dark" data-bs-toggle="collapse">
-                    {{ app }}
+                <a href="#{{ app }}" class="nav-link in-fs-14 in-fw-bld link-light" data-bs-toggle="collapse">
+                    {% if app == "Company" %} 
+                    <i class="bi bi-building in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Inventory" %}
+                    <i class="bi bi-box-seam in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Stock" %}
+                    <i class="bi bi-clipboard-data in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Orders" %}
+                    <i class="bi bi-receipt in-fs-20 in-fw-bld i-first"></i>
+
+                    {% endif %}
+                    {% if app == "Company" %} 
+
+                    <span>Affiliated Businesses</span>
+                    {% else %}
+                    <span>{{ app }}</span>
+                    {% endif %}
                 </a>
                 <ul class="collapse nav flex-column ms-1" id="{{ app }}" data-bs-parent="#submenu1">
                     {% for model in models %}
                         {% if  model == 'Company'%}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'company:company_create'  'customer'  %}">Customers</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'customer'  %}">
+                                    <i class="bi bi-people in-fs-14 in-fw-bld"></i>
+                                    <span>Customers</span>
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'company:company_create'  'manufacturer'  %}">Manufacture</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'manufacturer'  %}">
+                                    <i class="bi bi-tools in-fs-14 in-fw-bld"></i>
+                                     <span>Manufacture</span>
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'company:company_create'  'supplier'  %}">Suppliers</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'supplier'  %}">
+                                    <i class="bi bi-truck in-fs-14 in-fw-bld"></i>
+                                     <span>Manufacture</span>
+                                </a>
                             </li>
                         {% else %}
 
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'common:add_item'  app.lower  model.lower|cut:' '  %}">{{model}}</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'common:add_item'  app.lower user.company.encrypted_id  model.get_label %}">{{model.get_verbose_names}}</a>
                             </li>
                         {%endif%}
                     {% endfor %}
@@ -32,4 +54,62 @@
             </li>
         </ul>
     {% endfor %}    
-</li>
+{%elif user.profile %}
+
+    {% for app, models in apps_list %}
+        <ul class="collapse nav flex-column ms-1" id="submenu1" data-bs-parent="#sidebar-wrapper">
+            
+            <li>
+                <a href="#{{ app }}" class="nav-link in-fs-14 in-fw-bld link-light" data-bs-toggle="collapse">
+                    {% if app == "Company" %} 
+                    <i class="bi bi-building in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Inventory" %}
+                    <i class="bi bi-box-seam in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Stock" %}
+                    <i class="bi bi-clipboard-data in-fs-20 in-fw-bld i-first"></i>
+                    {% elif app == "Orders" %}
+                    <i class="bi bi-receipt in-fs-20 in-fw-bld i-first"></i>
+                    
+                    {% endif %}
+                    {% if app == "Company" %} 
+                    <span>Affiliated Businesses</span>
+                    {% else %}
+                    <span>{{ app }}</span>
+                    {% endif %}
+
+                </a>
+                <ul class="collapse nav flex-column ms-1" id="{{ app }}" data-bs-parent="#submenu1">
+                    {% for model in models %}
+                        {% if  model == 'Company'%}
+                            <li class="nav-item">
+                                
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.profile.encrypted_id  'customer'  %}">
+                                    <i class="bi bi-people in-fs-14 in-fw-bld"></i>
+                                    <span>Customers</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.profile.encrypted_id  'manufacturer'  %}">
+                                    <i class="bi bi-tools in-fs-14 in-fw-bld"></i>
+                                     <span>Manufacture</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.profile.encrypted_id  'supplier'  %}">
+                                    <i class="bi bi-truck in-fs-20 in-fw-bld"></i>
+                                     <span>Suppliers</span>
+
+                                </a>
+                            </li>
+                        {% else %}
+
+                            <li class="nav-item">
+                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'common:add_item'  app.lower user.profile.encrypted_id  model.lower|cut:' '  %}">{{model}}</a>
+                            </li>
+                        {%endif%}
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+    {% endfor %}    
+{% endif %}    

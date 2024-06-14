@@ -6,10 +6,13 @@ from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.translation import gettext_lazy as _
 
 from django.conf import settings
-
+import uuid
 User= settings.AUTH_USER_MODEL
 
-
+class UUIDBaseModel(models.Model):
+    
+    class Meta:
+        abstract=True
 class GenericModel(models.Model):
     """
     Abstract base class for models with GenericForeignKey.
@@ -21,7 +24,6 @@ class GenericModel(models.Model):
     - content_type: ForeignKey to ContentType model representing the type of the linked object.
     - object_id: PositiveIntegerField representing the ID of the linked object.
     - content_object: GenericForeignKey to represent the linked object.
-    - for_which_model: CharField to specify the target model (e.g., 'post', 'event', etc.).
     - created_at: DateTime field representing the timestamp when the like was created.
     - updated_at: DateTime field representing the timestamp when the comment was last updated.
 
@@ -56,16 +58,16 @@ class GenericModel(models.Model):
         """
         return f"Instance for {self.content_type.model} ({self.object_id})"
 
-    def save(self, *args, **kwargs):
-        """
-        Override the save method to update updated_at field.
-        """
-        if not self.pk:
-            # This is a new instance, set the created_at timestamp
-            self.created_at = timezone.now()
-        # Always update the updated_at timestamp
-        self.updated_at = timezone.now()
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     """
+    #     Override the save method to update updated_at field.
+    #     """
+    #     if not self.pk:
+    #         # This is a new instance, set the created_at timestamp
+    #         self.created_at = timezone.now()
+    #     # Always update the updated_at timestamp
+    #     self.updated_at = timezone.now()
+    #     super().save(*args, **kwargs)
 
 
 class UserSubscription(models.Model):
@@ -137,6 +139,7 @@ class Attachment(GenericModel):
 
     Fields:
     """
+    
     def __str__(self):
         return f"Attachment for {self.content_type.model} ({self.object_id})"
 
@@ -154,7 +157,7 @@ class File(models.Model):
     - attachment: ForeignKey to Attachment model representing the parent attachment.
     - file: FileField representing the attached file.
     """
-    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE, related_name='attached_files')
+    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE,blank=False,null=True, related_name='attached_files')
     file = models.FileField(upload_to=attachment_upload_path, blank=True,null=True)
 
     def __str__(self):

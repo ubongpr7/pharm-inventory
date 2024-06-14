@@ -12,17 +12,41 @@
 
                     <a class="nav-link" href="{% url 'common:home' %}">Home</a>
                 </li>
+                {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Settings
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        {% settings %}
+                        {% settings user %}
+
+                        
+                    {% if user.company and user.is_main %}
+                    <li class="nav-item">
+                        <a class="dropdown-item dropdown-toggle" href="{% url 'management:add_staff_user' user.company.encrypted_id %}">Manage Staff </a>
+                    </li>
+                 {% elif user.is_main %}    
+                    <li class="nav-item">
+                        <a class="dropdown-item dropdown-toggle" href="{% url 'management:company_profile'  %}">Company Profile</a>
+                    </li>
+
+                {% endif %} 
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin">Admin Login</a>
-                </li>
+                
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account:logout' %}"> Logout</a>
+                    </li>
+   
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account:signin' %}"> Signin</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account:signup' %}"> Register</a>
+                    </li>
+
+                {% endif %}
             </ul>
         </div>
     </div>

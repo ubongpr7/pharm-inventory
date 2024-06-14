@@ -25,7 +25,16 @@
     <h1 class="text-3xl font-semibold text-blue-700 mb-8">Add Inventory</h1>
     <form action="." method="post" class="form">
         {% csrf_token %}
-        {% bootstrap_form form %}
+        <div class="col-lg-6 col-md-6 col-sm-12">
+          <div class="row">
+            {% for field in form %}
+            <div class="col-md-6 col-sm-12">
+              {% bootstrap_field form %}
+
+            </div>
+            {% endfor %}
+          </div>
+        </div>
         {% buttons %}
           <button type="submit" class="btn btn-primary">
             Submit

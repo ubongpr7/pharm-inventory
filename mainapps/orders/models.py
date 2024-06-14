@@ -16,7 +16,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
 from mptt.models import TreeForeignKey
 
 
-from mainapps.company.models import Address, Company, Contact 
+from mainapps.company.models import  Company, CompanyAddress, Contact 
 from mainapps.common.models  import User
 from mainapps.content_type_linking_models.models import Attachment
 from mainapps.inventory.helpers.field_validators import validate_currency_code
@@ -130,7 +130,7 @@ class Order(InventoryMixin):
     )
 
     address = models.ForeignKey(
-        Address,
+        CompanyAddress,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -206,6 +206,17 @@ class PurchaseOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='purchase_oders')
 
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Purchase Order"
+        return "Purchase Orders"
+    @property
+    def get_label(self):
+        return 'purchaseorder'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
 
 
 class SalesOrder(TotalPriceMixin, Order):
@@ -233,6 +244,17 @@ class SalesOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='sales_oders')
 
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Sales Order"
+        return "Salese Orders"
+    @property
+    def get_label(self):
+        return 'salesorder'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
 
 
 class SalesOrderShipment(InventoryMixin):
@@ -255,6 +277,18 @@ class SalesOrderShipment(InventoryMixin):
 
         # Shipment reference must be unique for a given sales order
         unique_together = ['order', 'reference']
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Sales Order Shipment"
+        return "Sales Order Shipments"
+    @property
+    def get_label(self):
+        return 'salesordershipment'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
+
 
     # @staticmethod
     # def get_api_url():
@@ -382,6 +416,18 @@ class ReturnOrder(TotalPriceMixin, Order):
         help_text=_('Date order was completed'),
     )
     attachment= GenericRelation(Attachment,related_query_name='return_oders')
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Return Order"
+        return "Return Orders"
+    @property
+    def get_label(self):
+        return 'returnorder'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
+
 
     
 

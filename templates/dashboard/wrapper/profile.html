@@ -1,0 +1,40 @@
+{% load static %}
+<div class="in-dropdown__menu" id="profile">
+    <div class="dropdown-header in-pd-20">
+        <div class="in-d-flex in-align-center">
+
+            <div class="user-img in-mg-r-10">
+                <div  class="in-avat in-avat-50">
+                    <img src="{% static 'assets/dashboard/images/user-f-1.jpg' %}" alt="" class="in-avat__img">
+                </div>
+                
+            </div>
+            <div class="user-detail">
+                <span class="in-fs-14 in-fw-bld in-d-block">Ubong Prosper</span>
+                <span class="in-fs-12  ">Founder: Intera Inventory</span>
+            </div>
+        </div>
+    </div>
+    <ul class="dropdown-content">
+        <li class="dropdown-list">
+            <a href="#" class="in-dropdown-link in-d-flex in-pd-x-20 in-pd-y-10">
+                <i class="bi bi-gear  in-fs-14 in-mg-10"></i>
+                <span class=" in-fs-14 in-fw-bld">
+                    Account Settings 
+                </span>
+            </a>
+        </li>
+    </li>
+        
+
+    </ul>
+    <div class="dropdown-footer ">
+        <a href="{% url 'account:logout' %}" class="in-dropdown-link in-d-flex in-pd-x-20 in-pd-y-10">
+            <i class="ri-user-star-line in-fs-14 in-mg-10"></i>
+            <span class=" in-fs-14 in-fw-bld">
+                Logout
+            </span>
+
+        </a>
+    </div>
+</div>

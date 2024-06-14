@@ -14,3 +14,10 @@ class UserAccessMixins(PermissionRequiredMixin):
             return redirect('/') 
         return super(UserAccessMixins,self).dispatch(request,*args,**kwargs)
 
+class CompanyPermissionMiddleWare:
+    def __init__(self,get_response):
+        self.get_response=get_response
+    def __call__(self,request)    :
+        staff_company_id=request.user.staff.company.pk
+        # inventory_company_id=
+        

@@ -17,7 +17,7 @@
   
 	<div class="container">
 	    
-		<form id="loginForm" method="POST" action="{% url 'verification' %}" class="login active">
+		<form id="loginForm" method="POST" action="{% url 'accounts:verification' %}" class="login active">
 		  {% csrf_token %}
 		 	        
 	            
@@ -44,7 +44,7 @@
 			
 			<p>
 			    <span id="countdown">timer</span>
-			 <a class="btn btn-secondary" id="resendLink" href="{% url 'verification' %}">Resend code</a>
+			 <a class="btn btn-secondary" id="resendLink" href="{% url 'accounts:verification' %}">Resend code</a>
                   
 			
 			</p>

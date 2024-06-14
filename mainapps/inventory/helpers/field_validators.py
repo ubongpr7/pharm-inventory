@@ -1,13 +1,16 @@
-from iso4217 import Currency
+from currency_codes import get_currency_by_code, CurrencyNotFoundError
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from datetime import date
 
 def validate_currency_code(value):
+
     try:
-        currency = Currency(value)
-    except ValueError:
+        get_currency_by_code(value)
+    except CurrencyNotFoundError:
         raise ValidationError(f"{value} is not a valid currency code.")
+        print("Non-existent code have been used")
+
 
 
 

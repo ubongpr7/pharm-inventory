@@ -17,54 +17,14 @@ from mainapps.common.models import AttributeStore, User
 from mainapps.company.models import Company
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.orders.models import *
+from django.utils.crypto import get_random_string
+
+from django.utils.text import slugify
 from mainapps.utils.statuses import StockStatus
 from mainapps.utils.generators import generate_batch_code
 from mainapps.utils.validators import validate_batch_code, validate_serial_number
 
 
-
-class StockCategory(MPTTModel):
-
-    name = models.CharField(
-        max_length=200, 
-        unique=True, 
-        help_text='It must be unique', 
-        verbose_name='Category'
-    )
-    slug = models.SlugField(max_length=230, editable=False)
-    is_active = models.BooleanField(default=True)
-    parent = TreeForeignKey(
-        "self",
-        on_delete=models.PROTECT,
-        related_name="children",
-        null=True,
-        blank=True
-    )
-    description=models.TextField(blank=True,null=True)
-
-    class MPTTMeta:
-
-        order_insertion_by = ["name"]
-
-    class Meta:
-
-        ordering = ["name"]
-
-        verbose_name_plural = _("categories")
-
-
-
-
-    def save(self, *args, **kwargs):
-
-        self.slug = f"{get_random_string(6)}{slugify(self.name)}-{self.pk}-{get_random_string(5)}"
-
-        super(StockCategory, self).save(*args, **kwargs)
-
-
-    def __str__(self):
-
-        return self.name
 
 
 class StockLocationType(models.Model):
@@ -143,6 +103,18 @@ class StockLocation(InventoryMixin,MPTTModel):
         verbose_name = _('Stock Location')
         verbose_name_plural = _('Stock Locations')
 
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Stock Location"
+        return "Stock Locations "
+    @property
+    def get_label(self):
+        return 'stocklocation'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
+
 
     official = models.ForeignKey(
         User,
@@ -169,8 +141,8 @@ class StockLocation(InventoryMixin,MPTTModel):
         blank=True,
         related_name='children',
         on_delete=models.CASCADE,
-        verbose_name=_('Parent Category'),
-        help_text=_('Parent category, if any.'),
+        verbose_name=_('Super Location'),
+        help_text=_('The location this falls under eg if this is a sub location in a bigger location like warehouse'),
     )
 
     external = models.BooleanField(
@@ -241,13 +213,7 @@ class StockItem(MPTTModel, InventoryMixin):
         AttributeStore,
         related_query_name='stock_items'
         )
-    category = models.ForeignKey(
-        StockCategory, 
-        on_delete=models.SET_NULL, 
-        blank=True,
-        null=True,
-        related_name='stock_items'
-    )
+    
 
     location = TreeForeignKey(
         StockLocation,
@@ -375,7 +341,7 @@ class StockItem(MPTTModel, InventoryMixin):
         choices=StockStatus.items(),
         validators=[MinValueValidator(0)],
         verbose_name=_('Status'),
-        help_text=_('Status of this StockItem (ref: InvenTree.status_codes.StockStatus)'),
+        help_text=_('Status of this StockItem '),
     )
     
 
@@ -404,9 +370,21 @@ class StockItem(MPTTModel, InventoryMixin):
     class Meta:
         verbose_name = _('Stock Item')
         verbose_name_plural = _('Stock Items')
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Stock Item"
+        return "Stock Items"
+    @property
+    def get_label(self):
+        return 'stockitem'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
 
 
-class StockItemTracking(models.Model):
+
+class StockItemTracking(InventoryMixin):
     """Stock tracking entry - used for tracking history of a particular StockItem.
 
 
@@ -439,6 +417,19 @@ class StockItemTracking(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True,related_name='tracked_info')
 
     deltas = models.JSONField(null=True, blank=True)
+    @property
+    def get_verbose_names(self,p=None):
+        if str(p) =='0':
+            return "Stock Tracking "
+        return "Stock Tracking"
+    @property
+    def get_label(self):
+        return 'stockitemtracking'
+    @property
+    def return_numbers(self,profile) :
+        return self.objects.filter(inventory__profile=profile).count()
+
+
 
 
 registerable_models=[StockLocationType,StockLocation,StockItemTracking,StockItem,]

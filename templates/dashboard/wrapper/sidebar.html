@@ -1,0 +1,149 @@
+{% load static %}
+{% load model_tags %}
+
+
+
+
+
+<div class="in-sidebar" id="sidebar">
+  <div class="logo-content">
+    <div class="logo-name">
+      <img src="{% static 'images/logos/dark-inventory.png' %}" class="in-logo" alt="">
+    </div>
+    
+    <i class="ri ri-menu-line in-fs-20 in-fw-bld" id="btn"></i>
+  </div>
+  
+  <ul class="in-nav-list nav nav-pills flex-column mb-auto">
+    <li class="e-header__list">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-grid in-fs-20 in-fw-bld"></i>
+        
+        <span class="nav-link__name in-fs-16 in-fw-bld">{{ user.company.name  }} {{  user.profile.name }}</span>
+      </a>
+      <span class="tooltip">Dashboard</span>
+    </li>
+    
+    <li class="">
+      <a href="#submenu1" id="apps_list" class="in-nav-link nav-link link-light e-header__link e-active  e-tt-uppercase e-fs-14 e-fw-bld has-submenu " data-bs-toggle="collapse">
+        <i class="bi bi-menu-app-fill in-fs-20 in-fw-bld i-first"></i>
+        <div class="has_submenu">
+          <span class="nav-link__name in-fs-16 in-fw-bld menu-title ">APPS</span>
+          <i class="bi bi-chevron-right in-fs-20 in-fw-bld dir-to" id="apps_list-dir"></i>
+          
+        </div>
+      </a>
+      {% model_list user %}
+
+    </li>
+    
+    <li class="nav-item">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-bar-chart-fill in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">CHARTS</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-truck in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Suppliers</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link ">
+        <i class="ri ri-team-line in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Staff</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-cart in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Orders</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-cash in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Currencies</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link ">
+        <i class="bi bi-card-checklist in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Activities</span>
+      </a>
+    </li>
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-list-task in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Tasks</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="#" class="in-nav-link nav-link ">
+        <i class="bi bi-chat-fill in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Messages</span>
+      </a>
+    </li>
+    
+    
+    <li class="">
+      <a href="#" class="in-nav-link nav-link">
+        <i class="bi bi-question-square-fill in-fs-20 in-fw-bld"></i>
+        <span class="nav-link__name in-fs-16 in-fw-bld">Help/Support</span>
+      </a>
+    </li> 
+       
+
+    
+    
+    
+  </ul>
+</div>
+
+<script>
+  const btn= document.getElementById('btn')
+  const sidebar= document.getElementById('sidebar')
+  const hasSubmenus= document.querySelectorAll('.has-submenu')
+  const dirsTo= document.querySelectorAll('.dir-to')
+  document.body.addEventListener('click',(e)=>{
+    if (!sidebar.contains(e.target)){
+      if (sidebar.classList.contains('active')){
+        sidebar.classList.remove('active')
+      }
+    }
+  })
+
+  btn.onclick=function(){
+    sidebar.classList.toggle('active')
+  }
+hasSubmenus.forEach((item,index)=>{
+  item.addEventListener('click',()=>{
+    
+    dirsTo.forEach((item2,index2)=>{
+      if (index2 === index2 ){
+        if (item2.classList.contains('bi-chevron-right')){
+          if (sidebar.classList.contains('active')){}else {
+              sidebar.classList.add('active')
+            }
+          item2.classList.remove('bi-chevron-right')
+          item2.classList.add('bi-chevron-down')
+        }else if (item2.classList.contains('bi-chevron-down')){
+          item2.classList.remove('bi-chevron-down')
+          item2.classList.add('bi-chevron-right')
+
+        }
+        
+        console.log(item,index,item2, index2)
+      }
+    })
+  })
+})
+
+</script>
