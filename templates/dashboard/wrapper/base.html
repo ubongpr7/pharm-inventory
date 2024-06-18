@@ -1,7 +1,7 @@
 {% load static %}
 {% load bootstrap5 %}
 {% load model_tags %}
-
+{% load django_htmx %}
 {% block html %}
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
@@ -16,16 +16,15 @@
     {% endblock %}
     <title>{% block page_title %}{% endblock page_title %}</title>
     <link href="{% static 'assets/dashboard/css/main.css' %}" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+    
+    <link href="{% static 'assets/remix/fonts/remixicon.css' %}" rel="stylesheet"/>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap"
       rel="stylesheet">
 
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
     {% bootstrap_css %}
     {% block extra_style %}
     {% endblock extra_style %}
@@ -33,17 +32,26 @@
 {% endblock head %}
 {% block body %}
 <body>
-  {% bootstrap_messages %}
+  
+  
+  
+  {% include 'dashboard/wrapper/modal.html' %}
+
   {% include 'dashboard/wrapper/header.html' %}
   <main>
     <div class="in-container in-offset-md-1" style="margin-left: 6rem; margin-top: 6rem; padding-right: 4rem;">
+      {% bootstrap_messages %}
       
           {% block content %}
   
           {% endblock content %}
-
+<!-- 
+          <div class="create-form" id="create-form">
+      
+          </div> -->
         {% block in_page_scripts %}
         {% endblock in_page_scripts %}
+
       </div>
   </main>
   
@@ -51,10 +59,69 @@
 
     {% block script %}
     <script src="{% static 'assets/js/jQuery.js' %}"></script>
-    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+    <script src="{% static 'assets/js/htmx.js' %}"></script>
+    {% django_htmx_script %}
 
     <script src="{% static 'assets/dashboard/js/main.js' %}"></script>
+    
     {% bootstrap_javascript %}
+    <script>
+      document.querySelectorAll('a[data-target-div]').forEach(anchor=>{
+        anchor.addEventListener('click',function(e){
+          e.preventDefault();
+          const targetId=this.getAttribute('data-target-div');
+          const targetElement= document.getElementById(targetId)
+          htmx.on('htmx:afterSwap', (event)=>{
+            if (event.detail.target.id === targetId){
+              targetElement.scrollIntoView({behavior:'smooth'})
+            }
+          })
+        })
+      })
+      
+      
+    </script>  
+  <script>
+    ; (function () {
+      const modal = new bootstrap.Modal(document.getElementById("modal"))
+
+      htmx.on("htmx:afterSwap", (e) => {
+        // Response targeting #dialog => show the modal
+        if (e.detail.target.id == "dialog") {
+          modal.show()
+        }
+      })
+
+      htmx.on("htmx:beforeSwap", (e) => {
+        // Empty response targeting #dialog => hide the modal
+        if (e.detail.target.id == "dialog" && !e.detail.xhr.response) {
+          modal.hide()
+          e.detail.shouldSwap = false
+        }
+      })
+
+      // Remove dialog content after hiding
+      htmx.on("hidden.bs.modal", () => { 
+          
+        document.getElementById("dialog").innerHTML = ""
+        // location.reload()
+        
+      })
+      
+    })()
+  </script>
+  <script>
+      ; (function () {
+        const toastElement = document.getElementById("toast")
+        const toastBody = document.getElementById("toast-body")
+        const toast = new bootstrap.Toast(toastElement, { delay: 2000 })
+
+        htmx.on("showMessage", (e) => {
+          toastBody.innerText = e.detail.value
+          toast.show()
+        })
+      })()
+  </script>
     {% block extra_script %}
     {% endblock extra_script %}
     {% endblock script %}

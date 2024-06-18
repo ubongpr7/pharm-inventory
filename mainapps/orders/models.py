@@ -124,8 +124,8 @@ class Order(InventoryMixin):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name=_('Contact'),
-        help_text=_('Point of contact for this order'),
+        verbose_name=_('Contact Person'),
+        help_text=_('Point of contact for this order, that is the person you should keep in contact with for this order in the affiliated business'),
         related_name='+',
     )
 
@@ -135,7 +135,7 @@ class Order(InventoryMixin):
         blank=True,
         null=True,
         verbose_name=_('Address'),
-        help_text=_('Company address for this order'),
+        help_text=_('Company address for this order of the affiliated business'),
         related_name='+',
     )
 
@@ -206,7 +206,7 @@ class PurchaseOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='purchase_oders')
 
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Purchase Order"
@@ -214,7 +214,7 @@ class PurchaseOrder(TotalPriceMixin, Order):
     @property
     def get_label(self):
         return 'purchaseorder'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 
@@ -244,7 +244,7 @@ class SalesOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='sales_oders')
 
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Sales Order"
@@ -252,7 +252,7 @@ class SalesOrder(TotalPriceMixin, Order):
     @property
     def get_label(self):
         return 'salesorder'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 
@@ -277,7 +277,7 @@ class SalesOrderShipment(InventoryMixin):
 
         # Shipment reference must be unique for a given sales order
         unique_together = ['order', 'reference']
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Sales Order Shipment"
@@ -285,7 +285,7 @@ class SalesOrderShipment(InventoryMixin):
     @property
     def get_label(self):
         return 'salesordershipment'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 
@@ -416,7 +416,7 @@ class ReturnOrder(TotalPriceMixin, Order):
         help_text=_('Date order was completed'),
     )
     attachment= GenericRelation(Attachment,related_query_name='return_oders')
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Return Order"
@@ -425,6 +425,9 @@ class ReturnOrder(TotalPriceMixin, Order):
     def get_label(self):
         return 'returnorder'
     @property
+    def get_icon(self):
+        return 'ri'
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 

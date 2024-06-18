@@ -1,0 +1,13 @@
+<td class="in-tbl__data">
+            
+    <div class="in-actions in-d-flex ">
+        {% if user.company %}
+            <a href="" style="text-decoration: none;" class="in-card__title in-fw-bld in-btn-danger in-btn in-btn-sq"  hx-target="#dialog" hx-get="{% url 'common:delete_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-20 ri-delete-bin-5-line "></i> </a>
+        {% elif user.profile %}    
+            <a href="" style="text-decoration: none;" class="in-card__title in-fw-bld in-btn-danger in-btn in-btn-sq"  hx-target="#dialog" hx-get="{% url 'common:delete_item' app_label user.profile.encrypted_id model_label item.pk %}"> <i class="ri in-fs-20 ri-delete-bin-5-line "></i> </a>
+        {% endif %}
+            
+
+    </div>
+</td>
+            

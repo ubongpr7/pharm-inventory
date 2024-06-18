@@ -116,8 +116,10 @@ class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
             full_name = self.first_name + " " + self.last_name
         return full_name
 
+    # def __str__(self):
+    #     return '{} ({})'.format(self.username, self.get_full_name)
     def __str__(self):
-        return '{} ({})'.format(self.username, self.get_full_name)
+        return self.username
 
     @property
     def get_user_role(self):

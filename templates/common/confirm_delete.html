@@ -1,0 +1,14 @@
+
+
+<div>
+    <form id="delete-form" hx-post="{{ del_url }}" hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}' class="modal-content"> 
+        
+        <h3 class="in-h1 in-d-block in-pd-20">Are You sure you want to delete {{obj}}</h3>
+
+        <div class="in-d-flex in-justify-around">
+            <button type="submit" class="in-btn in-btn-danger in-mg-y-10 ">Delete</button>
+            <!-- <button type="button" class="in-btn in-btn-secondary in-mg-y-10 ">Cancel</button> -->
+        </div>
+    </form>
+
+</div>

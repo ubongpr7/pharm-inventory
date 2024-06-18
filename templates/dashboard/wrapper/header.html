@@ -1,13 +1,10 @@
 {% load static %}
 <header class="in-header in-header-fixed in-d-flex in-justify-between in-align-center">
     <div class="in-container">
-        <!-- <div class="in-offset-8 in-offset-md-3 in-offset-lg-2"> -->
             <nav class="in-header__nav in-d-flex in-justify-between in-align-center">
                 <div class="in-header__left in-d-flex in-align-center in-mg-r-10 in-mg-0-md">
                     <div class="in-header__mobile in-mg-r-10 in-d-none-md">
-                        <button type="button" class="in-header__mobile--trigger in-icon-btn" data-menu-target="main-menu">
-                            <i class="ri-menu-2-line in-fs-16"></i>
-                        </button>
+                        
                     </div>
                     <div class="in-header__form">
                         
@@ -51,9 +48,9 @@
             </nav>
             {% else%}
             <div class="in-d-flex">
-                <a class="nav-link in-fs-14 in-fw-bld in-d-flex" href="{% url 'account:signin' %}"> Signin</a>
+                <a class="nav-link in-fs-14 in-fw-bld in-btn in-btn-secondary  in-d-flex"style="width: 5.5rem;" href="{% url 'account:signin' %}"> Signin</a>
 
-                <a class="nav-link in-fs-14 in-fw-bld in-d-flex" href="{% url 'account:signup' %}"> Register</a>
+                <a class="nav-link in-fs-14 in-fw-bld in-d-flex in-btn in-btn-primary in-mg-l-10" style="width: 6.5rem;" href="{% url 'account:signup' %}"> Register</a>
             </div>
                 
             {% endif %}

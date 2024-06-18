@@ -140,19 +140,27 @@ class Address(models.Model):
 
 class Attribute(models.Model):
     name = models.CharField(max_length=255)
+    def __str__(self):
+        return self.name
 
 class Value(models.Model):
     attribute = models.ForeignKey(Attribute, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
     class Meta:
         unique_together = ('attribute', 'value')
+    def __str__(self):
+        return f'{self.value } {self.attribute}'
 class Unit(models.Model):
-    attribute = models.ForeignKey(Attribute, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-
+    attribute = models.ForeignKey(Attribute,help_text=_('What attribute does the unit measure?'), on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, verbose_name='Unit name',)
+    abbreviated_name = models.CharField(max_length=4,blank=True,null=True,help_text=_('What is the short form of the unit'))
+    def __str__(self):
+        return f'{self.name } {self.attribute}'
+    
 class AttributeStore(GenericModel):
     attributes= models.JSONField(default=dict)
-
+    def __str__(self):
+        return self.attributes
 
 registerable_models=[Attribute,Value,Unit,AttributeStore,TypeOf]
 

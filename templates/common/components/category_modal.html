@@ -10,6 +10,7 @@
                 </button>
             </div>
             <div class="modal-body">
+                
                 <form id="popupForm" action="{% url 'common:add_common' user.company.encrypted_id model_item  %}" method="post">
                     {% csrf_token %}
                     <!-- Dynamic form fields will be injected here via AJAX -->

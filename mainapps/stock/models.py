@@ -103,7 +103,7 @@ class StockLocation(InventoryMixin,MPTTModel):
         verbose_name = _('Stock Location')
         verbose_name_plural = _('Stock Locations')
 
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Stock Location"
@@ -111,11 +111,11 @@ class StockLocation(InventoryMixin,MPTTModel):
     @property
     def get_label(self):
         return 'stocklocation'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 
-
+    name=models.CharField(max_length=200, null=True, blank=False)
     official = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -370,7 +370,7 @@ class StockItem(MPTTModel, InventoryMixin):
     class Meta:
         verbose_name = _('Stock Item')
         verbose_name_plural = _('Stock Items')
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Stock Item"
@@ -378,7 +378,7 @@ class StockItem(MPTTModel, InventoryMixin):
     @property
     def get_label(self):
         return 'stockitem'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 
@@ -417,7 +417,7 @@ class StockItemTracking(InventoryMixin):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True,related_name='tracked_info')
 
     deltas = models.JSONField(null=True, blank=True)
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
             return "Stock Tracking "
@@ -425,7 +425,7 @@ class StockItemTracking(InventoryMixin):
     @property
     def get_label(self):
         return 'stockitemtracking'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
 

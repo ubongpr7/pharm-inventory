@@ -26,7 +26,7 @@ def modelview_list(user):
 def model_list(user):
     apps_list=[]
     excludeded_models=['contact', 'companyaddress','stocklocationtype','stockitemtracking']
-    exp_excluded_apps=['admin','auth','contenttypes','management','common','cities_light','accounts','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5']
+    exp_excluded_apps=['admin','django_extensions','auth','contenttypes','management','common','cities_light','accounts','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5']
     for app in apps.get_app_configs():
         if app.label not in exp_excluded_apps:
         

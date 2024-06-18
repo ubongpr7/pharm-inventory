@@ -1,0 +1,239 @@
+
+{% load static %}
+
+<section class="ease-client-overview in-pd-y-20">
+
+    <div class="in-card ease-client">
+
+      <div class="in-card__header in-d-flex in-justify-between">
+        
+        <span class="in-card__title in-fw-bld" hx->{{ title }} overview</span>
+        <div class="in-header__form">
+                        
+          <form class="in-form">
+              <div class="in-form__group">
+              <input type="text" class="in-form__input" placeholder="Search...">
+              <i class="ri-search-line in-form__icon"></i>
+              </div>
+          </form>
+      </div>
+
+        <div class="in-actions in-d-flex ">
+            {% if user.company %}
+                <a href="" class="in-card__title in-fw-bld in-btn-primary in-btn in-btn-sq" hx-target="#{{ model_label }}-form" hx-target="#{{ model_label }}-content" hx-get="{% url 'common:add_item' app_label user.company.encrypted_id model_label %}" style="text-decoration: none;"> <i class="ri in-fs-20 ri-add-circle-fill"></i> </a>
+            {% elif user.profile %}    
+                <a href="" style="text-decoration: none;" class="in-card__title in-fw-bld in-btn-primary in-btn in-btn-sq" data-target-div="{{ model_label }}-form" hx-target="#{{ model_label }}-form" hx-get="{% url 'common:add_item' app_label user.profile.encrypted_id model_label %}"> <i class="ri in-fs-20 ri-add-circle-fill"></i> </a>
+            {% endif %}
+
+            <button onclick="closeContent(this)" class="in-card__title in-fw-bld in-btn-danger in-btn in-btn-sq in-mg-l-10"> <i class="ri in-fs-20 ri-close-circle-fill " data-target="{{ model_label }}-content"></i> </button>
+
+        </div>
+      </div>
+      {% if table_heads %}
+
+      {% include "common/htmx/table_partial.html" %}
+      {%else %}
+
+      <div class="in-card__body in-pd-0">
+
+        <div class="in-overflow-auto">
+
+          <table class="in-tbl">
+
+            <thead class="in-tbl__header">
+              <tr class="in-tbl__row">
+                <th class="in-tbl__head">Name</th>
+                <th class="in-tbl__head">Project</th>
+                <th class="in-tbl__head">Joined</th>
+                <th class="in-tbl__head">Spend</th>
+                <th class="in-tbl__head">Level</th>
+              </tr>
+            </thead>
+
+            <tbody class="in-tbl__body">
+
+              <tr class="in-tbl__row">
+
+                <td class="in-tbl__data">
+
+                  <div class="in-d-flex in-align-center">
+
+                    <div class="in-mg-r-10">
+                      <div class="in-avat in-avat-30"><img src="{% static 'assets/dashboard/images/fitness-sm.jpg' %}" alt=""
+                          class="in-avat__img">
+                      </div>
+                    </div>
+
+                    <div class="user-details">
+                      <span class="in-h5 in-d-block">FitPro</span>
+                      <span class="in-fs-12">John D.</span>
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td class="in-tbl__data">FitPro website analysis</td>
+
+                <td class="in-tbl__data">July 16, 2023</td>
+                <td class="in-tbl__data">$27,345.98</td>
+                <td class="in-tbl__data"><span class="ease-level-gold in-fw-md">Gold</span></td>
+              </tr>
+
+              <tr class="in-tbl__row">
+
+                <td class="in-tbl__data">
+
+                  <div class="in-d-flex in-align-center">
+
+                    <div class="in-mg-r-10">
+                      <div class="in-avat in-avat-30"><img src="{% static 'assets/dashboard/images/fitness-sm.jpg' %}" alt="" class="in-avat__img">
+                      </div>
+                    </div>
+
+                    <div class="user-details">
+                      <span class="in-h5 in-d-block">EatPro</span>
+                      <span class="in-fs-12">Jackson D.</span>
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td class="in-tbl__data">Website design for EatPro</td>
+
+                <td class="in-tbl__data">July 16, 2023</td>
+                <td class="in-tbl__data">$17,345.98</td>
+                <td class="in-tbl__data"><span class="ease-level-silver in-fw-md">Silver</span></td>
+              </tr>
+
+              <tr class="in-tbl__row">
+
+                <td class="in-tbl__data">
+
+                  <div class="in-d-flex in-align-center">
+
+                    <div class="in-mg-r-10">
+                      <div class="in-avat in-avat-30"><img src="{% static 'assets/dashboard/images/fitness-sm.jpg' %}" alt="" class="in-avat__img">
+                      </div>
+                    </div>
+
+                    <div class="user-details">
+                      <span class="in-h5 in-d-block">Nike</span>
+                      <span class="in-fs-12">Riley R.</span>
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td class="in-tbl__data">Marketing &amp; branding</td>
+
+                <td class="in-tbl__data">July 16, 2023</td>
+                <td class="in-tbl__data">$47,345.98</td>
+                <td class="in-tbl__data"><span class="ease-level-gold in-fw-md">Gold</span></td>
+              </tr>
+
+              <tr class="in-tbl__row">
+
+                <td class="in-tbl__data">
+
+                  <div class="in-d-flex in-align-center">
+
+                    <div class="in-mg-r-10">
+                      <div class="in-avat in-avat-30"><img src="{% static 'assets/dashboard/images/fitness-sm.jpg' %}" alt="" class="in-avat__img">
+                      </div>
+                    </div>
+
+                    <div class="user-details">
+                      <span class="in-h5 in-d-block">Instacart</span>
+                      <span class="in-fs-12">Williams W.</span>
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td class="in-tbl__data">Marketing &amp; branding</td>
+
+                <td class="in-tbl__data">July 16, 2023</td>
+                <td class="in-tbl__data">$22,345.98</td>
+                <td class="in-tbl__data"><span class="ease-level-gold in-fw-md">Gold</span></td>
+              </tr>
+
+              <tr class="in-tbl__row">
+
+                <td class="in-tbl__data">
+
+                  <div class="in-d-flex in-align-center">
+
+                    <div class="in-mg-r-10">
+                      <div class="in-avat in-avat-30"><img src="{% static 'assets/dashboard/images/fitness-sm.jpg' %}" alt="" class="in-avat__img">
+                      </div>
+                    </div>
+
+                    <div class="user-details">
+                      <span class="in-h5 in-d-block">Amazon</span>
+                      <span class="in-fs-12">Jeff B.</span>
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td class="in-tbl__data">Wireframe for Amazon App</td>
+
+                <td class="in-tbl__data">July 16, 2023</td>
+                <td class="in-tbl__data">$12,345.98</td>
+                <td class="in-tbl__data"><span class="ease-level-silver in-fw-md">Silver</span></td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+      {% endif %}
+    </div>
+
+  </section><!-- .ease-client-overview ends -->
+<script>
+  
+  function getItems(){
+    
+        htmx.ajax('GET', "{% url 'common:item_list' app_label user.company.encrypted_id model_label  %}",{target:'#{{ model_label }}-content'})
+        console.log('gotten')    
+   }
+    function closeContent(button){
+        
+        const contentDiv =document.getElementById(button.querySelector("[data-target]").getAttribute('data-target'))
+        contentDiv.innerHTML=''            
+        
+    }
+    function updateItems(){
+      const _variables={
+        model_name:"{{ model_label }}",
+        app_name:"{{ app_label }}"
+
+      }
+      const modelDiv= document.getElementById("{{ model_label }}")
+
+      if (document.getElementById(`delete-form`)){
+        document.getElementById(`delete-form`).addEventListener('submit',()=>{
+          getItems()
+
+        })
+      }
+
+      if (document.getElementById(`${_variables.model_name}-form`)){
+        let modelForm= document.getElementById(`${_variables.model_name}-form`)
+        modelDiv.addEventListener('submit',()=>{
+          getItems()
+          
+        })
+      }
+    }
+    updateItems()
+</script>

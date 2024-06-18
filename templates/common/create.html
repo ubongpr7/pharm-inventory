@@ -12,10 +12,7 @@
 <style>
     .add-cat{
         color: #111;
-        /* width: 3rem;
-        height: 3rem; */
-        /* align-self: normal ; */
-        /* text-align: left; */
+        
         margin-left: -5px;
         background-color: transparent;
         cursor: pointer;
@@ -31,7 +28,7 @@
         <div class="card">
             <div class="card-body " >
                 <div class="card-body">
-                    <h3 class="card-title">Add new {{ title }} </h3>
+                    <h3 class="card-title">{{ title }} </h3>
                     <form action="." method="post" class="form in-d-flex in-align-center in-justify-center">
                         {% csrf_token %}
                         <div class="col-lg-12 col-md-12 col-sm-12">
@@ -44,10 +41,10 @@
                                     
                                       {% bootstrap_field field %}
                                   </div>
-                                  <button class="col-3 bi add-cat"  onclick="my_modal_1.showModal()">
-
-                                      <i class="col-3 bi  in-fw-bld bi-plus in-fs-20 " hx-get="{% url 'inventory:add_inventory_category'  %}" hx-trigger="click" hx-target="#modal-form" data-add-category=""></i>
+                                  <button  hx-target="#dialog"   hx-get="{% url 'inventory:add_inventory_category'  %}" hx-trigger="click"  class="col-3  add-cat" type="button"">
+                                    <i class="col-3 ri  in-fw-bld ri-add-circle-fill in-fs-20 "></i>
                                   </button>
+                                
                                   
                     
                                 </div>
@@ -83,15 +80,7 @@
     </div>
 </div>
 
-<!-- <button class="btn" onclick="my_modal_1.showModal()">open modal</button> -->
-<dialog id="my_modal_1" class="modal">
-  <div class="modal-box">
-    
-    <div class="modal-action" id="modal-form">
 
-    </div>
-  </div>
-</dialog>
 {% endblock content %}
 
 {% block extra_script %}
@@ -119,5 +108,6 @@
             modal.hide();
         }
     })
+    
 </script>
 {% endblock extra_script %}

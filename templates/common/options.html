@@ -1,0 +1,5 @@
+
+<option value selected  disabled> Choose {{placeholder }}</option>
+{% for item in items %}
+    <option value="{{ item.id }}">{{item.name }} </option>
+{% endfor %}

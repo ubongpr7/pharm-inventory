@@ -1,34 +1,45 @@
 from django import forms
 from .models import Inventory,InventoryCategory
-from mainapps.company.models import Company 
+
 
 class InVentoryForm(forms.ModelForm):
-    class Meta:
-        model = Inventory
-        fields = ['name', 'description', 'category', ]  # include other fields as needed
-
-    # def __init__(self, *args, **kwargs):
-    #     user = kwargs.pop('user', None)
-    #     super(InVentoryForm, self).__init__(*args, **kwargs)
-        
-
-class InventoryCategoryForm(forms.ModelForm):
-    name=forms.CharField(max_length=100,required=True,label='Category name*',
-    widget=forms.TextInput(
+    category=forms.ModelChoiceField(
+        queryset=InventoryCategory.objects.all(),
+        widget=forms.Select(
             attrs={
                 "hx-get": '/inventory/get-inventory-categories/',
-                "hx-target":'#id_parent'
+                "hx-target":'#id_category',
+                'hx-trigger':'revealed'
                 }
             )
     )
     
+    
+    class Meta:
+        model = Inventory
+        fields = '__all__'
+
+
+class InventoryCategoryForm(forms.ModelForm):
+    
     parent=forms.ModelChoiceField(
-        queryset=InventoryCategory.objects.none(),
-        label='Parent category'
-        
+        queryset=InventoryCategory.objects.all(),
+        label='Parent category',
+        required=False,
+        widget=forms.Select(
+            attrs={
+                "hx-get": '/inventory/get-inventory-categories/',
+                "hx-target":'#id_parent',
+                'hx-trigger':'revealed'
+
+                }
+            )
     )
+    
+        
+    # )
     class Meta:
         model = InventoryCategory
-        fields = "__all__"
+        exclude = ("parent",)
 
         # fields=['parent']

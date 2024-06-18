@@ -6,13 +6,13 @@
             <li>
                 <a href="#{{ app }}" class="nav-link in-fs-14 in-fw-bld link-light" data-bs-toggle="collapse">
                     {% if app == "Company" %} 
-                    <i class="bi bi-building in-fs-20 in-fw-bld i-first"></i>
+                    <i class="ri ri-building-2-line in-fs-20 in-fw-bld i-first"></i>
                     {% elif app == "Inventory" %}
-                    <i class="bi bi-box-seam in-fs-20 in-fw-bld i-first"></i>
+                    <i class="ri ri-stack-line in-fs-20 in-fw-bld i-first"></i>
                     {% elif app == "Stock" %}
-                    <i class="bi bi-clipboard-data in-fs-20 in-fw-bld i-first"></i>
+                    <i class="ri ri-shopping-basket-line in-fs-20 in-fw-bld i-first"></i>
                     {% elif app == "Orders" %}
-                    <i class="bi bi-receipt in-fs-20 in-fw-bld i-first"></i>
+                    <i class="ri ri-file-list-line in-fs-20 in-fw-bld i-first"></i>
 
                     {% endif %}
                     {% if app == "Company" %} 
@@ -46,7 +46,7 @@
                         {% else %}
 
                             <li class="nav-item">
-                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'common:add_item'  app.lower user.company.encrypted_id  model.get_label %}">{{model.get_verbose_names}}</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="" data-target-div="{{model.get_label}}-content" hx-target="#{{model.get_label}}-content" hx-trigger="click" hx-get="{% url 'common:item_list'  app.lower user.company.encrypted_id  model.get_label %}">{{model.get_verbose_names}}</a>
                             </li>
                         {%endif%}
                     {% endfor %}

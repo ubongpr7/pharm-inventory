@@ -188,7 +188,14 @@ class InventoryPolicy(models.Model):
     )
     class Meta:
         abstract=True
-
+    def get_recall_policy_display(self):
+        return self.get_FOO_display()
+    @property
+    def get_recall_policy(self):
+        return self.RecallPolicies(self.recall_policy).label
+    @property
+    def get_expiration_policy(self):
+        return self.ExpirePolicies(self.expiration_policy).label
 
 class PrescriptionFillingPolicies(Policy):
     validity_period=models.IntegerField(

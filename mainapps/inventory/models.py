@@ -33,7 +33,7 @@ class InventoryCategory(MPTTModel):
         CompanyProfile,
         on_delete=models.SET_NULL,
         null=True,
-        blank=False,
+        blank=True,
         editable=False,
         related_name='inventory_categories',
         related_query_name='inventory_category'
@@ -64,15 +64,15 @@ class InventoryCategory(MPTTModel):
         constraints=[
             models.UniqueConstraint(fields=['name','profile'],name='unique_name_profile')
         ]
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
-            return "Inentory Category"
-        return "Inentory Categories"
+            return "Inventory Category"
+        return "Inventory Categories"
     @property
     def get_label(self):
         return 'inventorycategory'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(profile=profile).count()
 
@@ -86,11 +86,12 @@ class InventoryCategory(MPTTModel):
 
 
     def __str__(self):
-        if self.profile:
-
-            return f'{self.name} {self.profile}'
+        # if self.profile:
+            # return f'{self.name} {self.profile}'
         return self.name
-
+    @classmethod
+    def tabular_display(self):
+        return ['Name', 'Active','Parent','Descrition']
 
 
 
@@ -112,17 +113,20 @@ class Inventory(InventoryPolicy):
         constraints=[
             models.UniqueConstraint(fields=['name','profile'],name='unique_inventory_name_profile')
         ]
-    @property
+    @classmethod
     def get_verbose_names(self,p=None):
         if str(p) =='0':
-            return "Inentory "
-        return "Inentories "
+            return "Inventory "
+        return "Inventories "
     @property
     def get_label(self):
         return 'inventory'
-    @property
+    @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(profile=profile).count()
+    @classmethod
+    def tabular_display(self):
+        return ['Name', 'Type','Category','Created by','Created at','Last update','Items unit','Minimum stock level', 'Reorder point','Reorder quauntity','Recall policy','Expiration policy' ]
 
 
     name = models.CharField(
@@ -181,7 +185,7 @@ class Inventory(InventoryPolicy):
     def get_absolute_url(self):
         return f'/inventory/details/{self.pk}/'
     def __str__(self):
-        return f'{self.name} {self.profile}'
+        return f'{self.name} '
     
     def clean(self):
         if self.minimum_stock_level> self.re_order_point:

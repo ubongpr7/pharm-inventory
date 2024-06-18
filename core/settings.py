@@ -26,6 +26,7 @@ THIRD_PARTY_APPS=[
     "bootstrap5",
     "cities_light",
     'django_extensions',
+    "django_htmx",
     
 ]
 CORE_APPS = [
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django_htmx.middleware.HtmxMiddleware",
     # 'middleware.logging_middleware.LoggingMiddleWare',
     'middleware.ip_address_middleware.IPBlackListMiddleware',
 ]
