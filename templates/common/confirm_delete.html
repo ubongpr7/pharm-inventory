@@ -12,3 +12,36 @@
     </form>
 
 </div>
+<script>
+  
+    function getItems(){
+        if ("{{app_label }}"){
+
+            htmx.ajax('GET', "{% url 'common:item_list' app_label user.company.encrypted_id model_label  %}",{target:'#{{ model_label }}-content'})
+        }
+    }
+    
+    function updateItems(){
+        const _variables={
+        model_name:"{{ model_label }}",
+        app_name:"{{ app_label }}"
+    
+        }
+        const modelDiv= document.getElementById("{{ model_label }}")
+    
+        if (document.getElementById(`delete-form`)){
+          console.log('delete-form')
+          document.getElementById(`delete-form`).addEventListener('htmx:afterOnLoad',()=>{
+            
+            getItems()
+    
+        })
+        }
+    
+    
+    }
+    updateItems();
+    
+    </script>
+
+

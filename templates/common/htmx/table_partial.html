@@ -11,11 +11,14 @@
           <tr class="in-tbl__row">
             {% if table_heads %}
             {% for head in table_heads %}
-            <th class="in-tbl__head  in-justify-between">
-              <span  >{{ head }}</span>
-                <i class="ri ri-arrow-up-line"></i>
-                <i class="ri ri-arrow-down-line"></i>
+            {% for key, value in head.items %}
+            <th class="in-tbl__head  in-justify-between" >
+              <span  >{{ value }} {{ key }}</span>
+                <i class="ri ri-arrow-up-line" data-order-by="{{ key }}"></i>
+                <i class="ri ri-arrow-down-line " data-order-by="-{{ key }}"></i>
             </th>
+
+            {% endfor %}
             {% endfor %}
             <th class="in-tbl__head">Action</th>
             {% else %}

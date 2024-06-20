@@ -126,7 +126,7 @@ class Inventory(InventoryPolicy):
         return self.objects.filter(profile=profile).count()
     @classmethod
     def tabular_display(self):
-        return ['Name', 'Type','Category','Created by','Created at','Last update','Items unit','Minimum stock level', 'Reorder point','Reorder quauntity','Recall policy','Expiration policy' ]
+        return [{'name':'Name'},{ "i_type":'Type'},{"category":'Category'},{"created_by":'Created by'},{"created_at":'Created at'},{"updated_at":'Last update'},{"unit":'Stock items unit'}{"minimum_stock_level":'Minimum stock level'},{"re_order_point": 'Reorder point'},{"re_order_quauntity":'Reorder quauntity'},{"recall_policy":'Recall policy'},{"expiration_policy":'Expiration policy'} ]
 
 
     name = models.CharField(

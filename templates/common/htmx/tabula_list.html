@@ -201,39 +201,43 @@
   </section><!-- .ease-client-overview ends -->
 <script>
   
-  function getItems(){
+function getItems(){
     
-        htmx.ajax('GET', "{% url 'common:item_list' app_label user.company.encrypted_id model_label  %}",{target:'#{{ model_label }}-content'})
-        console.log('gotten')    
-   }
-    function closeContent(button){
-        
-        const contentDiv =document.getElementById(button.querySelector("[data-target]").getAttribute('data-target'))
-        contentDiv.innerHTML=''            
-        
+    htmx.ajax('GET', "{% url 'common:item_list' app_label user.company.encrypted_id model_label  %}",{target:'#{{ model_label }}-content'})
+    console.log('gotten')    
+}
+
+function updateItems(){
+    console.log('updateItems')
+    const _variables={
+    model_name:"{{ model_label }}",
+    app_name:"{{ app_label }}"
+
     }
-    function updateItems(){
-      const _variables={
-        model_name:"{{ model_label }}",
-        app_name:"{{ app_label }}"
+    const modelDiv= document.getElementById("{{ model_label }}")
 
-      }
-      const modelDiv= document.getElementById("{{ model_label }}")
+    if (document.getElementById(`delete-form`)){
+      console.log('delete-form')
+      document.getElementById(`delete-form`).addEventListener('htmx:afterOnLoad',()=>{
+        
+        console.log('deleted')
+        getItems()
 
-      if (document.getElementById(`delete-form`)){
-        document.getElementById(`delete-form`).addEventListener('submit',()=>{
-          getItems()
-
-        })
-      }
-
-      if (document.getElementById(`${_variables.model_name}-form`)){
-        let modelForm= document.getElementById(`${_variables.model_name}-form`)
-        modelDiv.addEventListener('submit',()=>{
-          getItems()
-          
-        })
-      }
+    })
     }
-    updateItems()
+
+    if (document.getElementById(`${_variables.model_name}-form`)){
+        const modelForm= document.getElementById(`${_variables.model_name}-form`)
+        console.log(modelDiv)
+    modelForm.addEventListener('htmx:afterOnLoad',()=>{
+        console.log('Item added')
+
+        getItems()
+        
+    })
+    }
+
+}
+updateItems();
+
 </script>

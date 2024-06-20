@@ -15,6 +15,7 @@ from cities_light.models import Region, City,SubRegion
 
 from mainapps.common.context_helper import get_context_heper
 from mainapps.common.models import Unit
+from .intera_messages import InteraMessages
 from mainapps.inventory.crud_logic import inventory_creation_logic
 from mainapps.inventory.forms import InVentoryForm, InventoryCategoryForm
 from mainapps.management.security.encripters import management_dispatch_dispatcher
@@ -69,27 +70,38 @@ class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
             return ['common/htmx/create.html']
         return ['common/create.html']
     def form_valid(self, form):
-        with transaction.atomic():
+        try:
+
+            with transaction.atomic():
+                    
+                if hasattr(self.get_model(),'profile'):
+                    if self.request.user.company:
+                        form.instance.profile= self.request.user.company
+                    elif self.request.user.profile:
+                        form.instance.profile= self.request.user.profile
+                if hasattr(self.get_model(),'created_by'):
+                    form.instance.created_by = self.request.user
                 
-            if hasattr(self.get_model(),'profile'):
-                if self.request.user.company:
-                    form.instance.profile= self.request.user.company
-                elif self.request.user.profile:
-                    form.instance.profile= self.request.user.profile
-            if hasattr(self.get_model(),'created_by'):
-                form.instance.created_by = self.request.user
-             
-            response = super().form_valid(form)
-            if self.request.htmx:
+                response = super().form_valid(form)
+                if self.request.htmx:
 
-                return HttpResponse('<div hx-swap-oob= "true" id ="success-message">Item created Successfully</div>')
-            return response
-
-    def form_invalid(self, form):
-        if self.request.htmx:
+                    return HttpResponse('<div hx-swap-oob= "true" id ="success-message">Item created Successfully</div>')
+                return response
+        except Exception as error:
+            form.add_error(None,error)
+            print(error)
             return render(self.request, 'common/htmx/create.html',self.get_context_data())
+    def form_invalid(self, form):
+        try:
+
+            if self.request.htmx:
+                return render(self.request, 'common/htmx/create.html',self.get_context_data())
         
-        return super().form_invalid(form)
+            return super().form_invalid(form)
+        except Exception as error:
+            form.add_error("name",error)
+            return render(self.request, 'common/htmx/create.html',self.get_context_data())
+
     
     def get_context_data(self, **kwargs ) :
         context= super().get_context_data(**kwargs)
@@ -155,9 +167,16 @@ def dynamic_delete(request,app_name,company_id, model_name,pk):
     if request.method=='POST':
         obj.delete()
         # return HttpResponse()
-        return HttpResponse('<div class="modal-content in-h3 in-pd-20 in-mg-y20 in-mg-x-20 " id ="success-message"> Item deleted Successfully</div>')
+        return HttpResponse(InteraMessages().success('Item deleted Successfully'))
+
     del_url=f'/delete/{app_name}/{company_id}/{model_name}/{pk}/'
-    return render(request, 'common/confirm_delete.html',{"obj":obj,'del_url':del_url})
+    context={
+        "obj":obj,'del_url':del_url,
+        "app_label":app_name,
+        "model_label":model_name,
+        'pk':pk
+    }
+    return render(request, 'common/confirm_delete.html',context)
 
 class DynamicDeleteView(DeleteView):
     success_url=None
