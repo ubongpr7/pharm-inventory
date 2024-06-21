@@ -8,7 +8,7 @@ register= template.Library()
 def modelview_list(user):
     apps_list=[]
     exp_excluded_apps=['admin','auth','contenttypes','cities_light','accounts','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5']
-    excluded_apps=['admin','auth','contenttypes','cities_light','management','accounts','common','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5', ]
+    excluded_apps=['admin','django_htmx','auth','contenttypes','cities_light','management','accounts','common','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5', ]
     excluded_models=['CompanyAddress','Contact']
     for app in apps.get_app_configs():
         if app.label not in excluded_apps:
@@ -26,7 +26,7 @@ def modelview_list(user):
 def model_list(user):
     apps_list=[]
     excludeded_models=['contact', 'companyaddress','stocklocationtype','stockitemtracking']
-    exp_excluded_apps=['admin','django_extensions','auth','contenttypes','management','common','cities_light','accounts','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5']
+    exp_excluded_apps=['admin','django_htmx','django_extensions','auth','contenttypes','management','common','cities_light','accounts','sessions','messages','staticfiles','content_type_linking_models','permit','widget_tweaks','bootstrap5']
     for app in apps.get_app_configs():
         if app.label not in exp_excluded_apps:
         

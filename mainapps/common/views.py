@@ -127,9 +127,7 @@ class AjaxGenericList(ListView):
         page = self.request.GET.get('page', 1)
         context['page_obj'] = context['paginator'].get_page(page)
         get_context_heper(self=self,context=context)
-
-    
-
+  
         return context
     def dispatch(self, request, *args, **kwargs):
         management_dispatch_dispatcher(self=self,request=request)
@@ -137,6 +135,8 @@ class AjaxGenericList(ListView):
 
     def get_queryset(self):
         model = self.get_model()
+        if hasattr(model, 'profile'):
+            return model.objects.filter(profile=self.company)
         return model.objects.all()
 
     

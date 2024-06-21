@@ -6,6 +6,7 @@ __pycache__/
 # C extensions
 *.so
 pharm-env
+intera-env
 # Distribution / packaging
 .Python
 build/

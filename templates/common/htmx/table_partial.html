@@ -13,7 +13,7 @@
             {% for head in table_heads %}
             {% for key, value in head.items %}
             <th class="in-tbl__head  in-justify-between" >
-              <span  >{{ value }} {{ key }}</span>
+              <span  >{{ value }}</span>
                 <i class="ri ri-arrow-up-line" data-order-by="{{ key }}"></i>
                 <i class="ri ri-arrow-down-line " data-order-by="-{{ key }}"></i>
             </th>
