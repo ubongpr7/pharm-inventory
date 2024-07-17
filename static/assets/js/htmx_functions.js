@@ -1,4 +1,3 @@
-console.log('htmx functions are running')
 ; (function () {
     const modal = new bootstrap.Modal(document.getElementById("modal"))
 
@@ -56,30 +55,3 @@ document.querySelectorAll('a[data-target-div]').forEach(anchor=>{
   
 }
 
-
-// tabular display functions
-
-
-// Create functions
-// document.addEventListener("htmx:afterRequest",(event)=>{
-//     if (event.detail.target.id ==="model-body"){
-//         var modal =new bootstrap.Modal(document.getElementById('sub-form'));
-//         modal.show();
-//         console.log('shown')
-
-//     }
-// })
-// document.addEventListener('htmx:afterRequest',(e)=>{
-//     if (e.detail.verb ==="POST"){
-        
-//         let newCategory=event.detail.xhr.response;
-//         let select=document.getElementById('id_category');
-//         let option=document.createElement('option');
-//         option.value=newCategory.id
-//         option.text=newCategory.name
-//         select.add(option);
-//         select.value=newCategory.id
-//         let modal =bootstrap.Modal.getInstance(document.getElementById('sub-form'))
-//         modal.hide();
-//     }
-// })

@@ -6,6 +6,7 @@ urlpatterns = [
     path('add/<str:app_name>/<str:company_id>/<str:model_name>/', AjaxTabGenericCreateView.as_view(), name='add_item'),
     path('list/<str:app_name>/<str:company_id>/<str:model_name>/', AjaxGenericList.as_view(), name='item_list'),
     path('delete/<str:app_name>/<str:company_id>/<str:model_name>/<int:pk>/', dynamic_delete, name='delete_item'),
+    path('update/<str:app_name>/<str:company_id>/<str:model_name>/<int:pk>/', AjaxTabGenericUpdateView.as_view(), name='update_item'),
     
     
     ###################################################################################

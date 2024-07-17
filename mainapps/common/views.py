@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render,get_list_or_404
 from django.views import View
-from django.views.generic import CreateView,TemplateView,ListView,DeleteView
+from django.views.generic import CreateView,TemplateView,ListView,DeleteView,UpdateView
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.http import HttpResponse, HttpResponseRedirect, Http404
@@ -20,6 +20,8 @@ from mainapps.inventory.crud_logic import inventory_creation_logic
 from mainapps.inventory.forms import InVentoryForm, InventoryCategoryForm
 from mainapps.management.security.encripters import management_dispatch_dispatcher
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.detail import DetailView
+
 
 
 
@@ -34,6 +36,108 @@ class HomEPage(TemplateView):
 #############Most reusable CreateView ever for non-inline_ models#######################################################################################
 
 """
+
+
+class AjaxGenericDetailView(DetailView):
+    template_name = 'common/htmx/detail.html'
+    context_object_name = 'item'
+
+    def get_model(self):
+        model_name = self.kwargs['model_name']
+        app_name = self.kwargs['app_name']
+        return apps.get_model(app_name, model_name)
+
+    def get_object(self, queryset=None):
+        model = self.get_model()
+        return model.objects.get(pk=self.kwargs['pk'])
+
+    def dispatch(self, request, *args, **kwargs):
+        management_dispatch_dispatcher(self=self, request=request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        get_context_heper(self=self, context=context)
+        return context
+
+
+class AjaxTabGenericUpdateView(LoginRequiredMixin, UpdateView):
+    template_name = 'common/htmx/create.html' 
+    success_url = '/'
+
+    def get_model(self):
+        model_name = self.kwargs['model_name']
+        app_name = self.kwargs['app_name']
+        return apps.get_model(app_name, model_name)
+
+    def get_object(self):
+        model = self.get_model()
+        return model.objects.get(pk=self.kwargs['pk'])
+
+    def get_form_class(self):
+        if self.kwargs['model_name'] == 'inventorycategory':
+            return InventoryCategoryForm
+        
+        elif self.kwargs['model_name'] == 'inventory':
+            return InVentoryForm
+        
+        return modelform_factory(self.get_model(), fields='__all__')
+
+    def dispatch(self, request, *args, **kwargs):
+        management_dispatch_dispatcher(self=self, request=request)
+        
+        if not request.user.has_perm(f'{self.kwargs["app_name"]}.change_{self.kwargs["model_name"]}'): 
+            print('no permission')  
+            print(self.request.user) 
+            if request.htmx:
+                return HttpResponse('<div hx-swap-oob="true" id="error-message"><h2>404</h2> <h3>User does not have permission to update this item </h3></div>')
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_template(self):
+        if self.request.htmx:
+            return ['common/htmx/create.html']
+        return ['common/create.html']
+
+    def form_valid(self, form):
+        try:
+            with transaction.atomic():
+                if hasattr(self.get_model(), 'profile'):
+                    if self.request.user.company:
+                        form.instance.profile = self.request.user.company
+                    elif self.request.user.profile:
+                        form.instance.profile = self.request.user.profile
+                if hasattr(self.get_model(), 'updated_by'):
+                    form.instance.updated_by = self.request.user
+                
+                response = super().form_valid(form)
+                if self.request.htmx:
+                    return HttpResponse('<div hx-swap-oob="true" id="success-message">Item updated successfully</div>')
+                return response
+        except Exception as error:
+            form.add_error(None, error)
+            print(error)
+            return render(self.request, 'common/htmx/create.html', self.get_context_data())
+
+    def form_invalid(self, form):
+        try:
+            if self.request.htmx:
+                return render(self.request, 'common/htmx/create.html', self.get_context_data())
+            return super().form_invalid(form)
+        except Exception as error:
+            form.add_error("name", error)
+            return render(self.request, 'common/htmx/create.html', self.get_context_data())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = self.get_form()
+        get_context_heper(self=self, context=context)
+        context['ajax_url'] = f'/update/{self.kwargs["app_name"]}/{self.kwargs["model_name"]}/{self.kwargs["pk"]}/'
+        context['get_url'] = f'/list/{self.kwargs["app_name"]}/{self.kwargs["model_name"]}/'
+        context['done_url'] = self.success_url
+        return context
+
+
 
 class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
     template_name = 'common/htmx/create.html'
@@ -119,12 +223,14 @@ class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
 
 
 class AjaxGenericList(ListView):
-    paginate_by = 3  
+    paginate_by = 3
     context_object_name = 'items'
     template_name='common/htmx/tabula_list.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         page = self.request.GET.get('page', 1)
+        context['get_url'] = f'/list/{self.kwargs['app_name']}/{self.kwargs['model_name']}/' 
+        
         context['page_obj'] = context['paginator'].get_page(page)
         get_context_heper(self=self,context=context)
   
@@ -135,9 +241,33 @@ class AjaxGenericList(ListView):
 
     def get_queryset(self):
         model = self.get_model()
+        filter_field = self.request.GET.get('filter_field', None)
+        filter_val = self.request.GET.get('filter', None)
+        order_val = self.request.GET.get('order_by', None)
+        print(filter_val)
+        print(order_val)
+        
+        
+
         if hasattr(model, 'profile'):
-            return model.objects.filter(profile=self.company)
-        return model.objects.all()
+            queryset= model.objects.filter(profile=self.company)
+        else:
+            queryset=model.objects.all()
+            
+        if filter_field and filter_val:
+            filter_kwargs = {filter_field: filter_val}
+            
+            try:
+                queryset = queryset.filter(**filter_kwargs)
+                print(queryset)
+            except Exception as e:
+                print(f"Error filtering by {filter_field}: {e}")
+                return queryset
+        if order_val :
+            queryset = queryset.order_by(order_val)
+        else:
+            queryset = queryset
+        return queryset
 
     
     def get_model(self):
@@ -223,19 +353,19 @@ class DynamicDeleteView(DeleteView):
 def get_regions(request):
     country_id = request.GET.get('addresses-0-country')
     regions = Region.objects.filter(country_id=country_id)
-    return render(request,'common/optons.html',{'items':regions,'placeholder':'region'})
+    return render(request,'common/options.html',{'items':regions,'placeholder':'region'})
 
 def get_subregions(request):
     region_id = request.GET.get('addresses-0-region')
     # subregions = SubRegion.objects.all()
     subregions = SubRegion.objects.filter(region_id=region_id)
     # return render(request,'common/address/subregions.html',{'subregions':subregions})
-    return render(request,'common/optons.html',{'items':subregions,'placeholder':'subregion'})
+    return render(request,'common/options.html',{'items':subregions,'placeholder':'subregion'})
 
 def get_cities(request):
     subregion_id = request.GET.get('addresses-0-subregion')
     cities = City.objects.filter(subregion_id=subregion_id).values('id', 'name')
-    return render(request,'common/optons.html',{'items':cities,'placeholder':'City'})
+    return render(request,'common/options.html',{'items':cities,'placeholder':'City'})
 
 
 """
@@ -254,3 +384,5 @@ def get_unit(request):
     return render(request,'common/options.html',{'items':units, 'placehoder':'unit'})
 
 
+def show_popup(request):
+    return render(request,'common/components/popup.html',{'content':'hi'})

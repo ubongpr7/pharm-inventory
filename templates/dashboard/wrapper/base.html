@@ -15,6 +15,7 @@
     {% block more_meta_tags %}
     {% endblock %}
     <title>{% block page_title %}{% endblock page_title %}</title>
+    <link rel="icon" href="{% static 'images/logos/favicon.ico' %}" type="image/x-icon">
     <link href="{% static 'assets/dashboard/css/main.css' %}" rel="stylesheet"/>
     
     <link href="{% static 'assets/remix/fonts/remixicon.css' %}" rel="stylesheet"/>
@@ -32,7 +33,6 @@
 {% endblock head %}
 {% block body %}
 <body>
-  
   
   
   {% include 'dashboard/wrapper/modal.html' %}
@@ -63,7 +63,7 @@
     {% django_htmx_script %}
 
     {% bootstrap_javascript %}
-    <script src="{% static 'assets/dashboard/js/main.js' %}"></script>
+    <!-- <script src="{% static 'assets/dashboard/js/main.js' %}"></script> -->
     <script src="{% static 'assets/js/htmx_functions.js' %}"></script>
     
     

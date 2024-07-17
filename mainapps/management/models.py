@@ -7,6 +7,9 @@ from django.utils.translation import pgettext_lazy as __
 from django.db.models import UniqueConstraint
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.text import slugify
+
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.signing import Signer
 from django.contrib.auth.models import Permission
 from mainapps.content_type_linking_models.models import Attachment
@@ -15,6 +18,9 @@ from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.common.settings import  DEFAULT_CURRENCY_CODE, currency_code_mappings
 from mainapps.inventory.helpers.file_editors import UniqueFilename
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your models here.
 signer=Signer()
@@ -197,6 +203,94 @@ class InventoryPolicy(models.Model):
     def get_expiration_policy(self):
         return self.ExpirePolicies(self.expiration_policy).label
 
+
+
+class ProfileManager(models.Manager):
+    """
+    - Custom manager for the Inventory model.
+    - Provides methods for querying inventories.
+    """
+
+    def for_profile(self, profile):
+        
+        return self.get_queryset().filter(profile=profile)
+
+
+class ProfileMixin(models.Model):
+    """
+    Abstract model providing a common base for models associated with an inventory.
+
+    - Attributes:
+        - inventory (Inventory): The inventory to which the model belongs.
+
+    - Manager:
+        - objects (InventoryManager): Custom manager for querying objects based on inventory.
+    """
+
+    profile = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL,null=True)
+
+    objects = ProfileManager()
+
+    class Meta:
+        abstract = True
+    
+    def save(self, *args, **kwargs):
+        """
+        Override the save method to perform additional actions when saving.
+
+        Args:
+            - *args: Additional positional arguments.
+            - **kwargs: Additional keyword arguments.
+        """
+        super().save(*args, **kwargs)
+
+
+
+class StaffPolicy(ProfileMixin):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+class StaffGroup(ProfileMixin):
+    name = models.CharField(max_length=255)
+    policies = models.ManyToManyField(StaffPolicy, related_name='groups')
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='staff_groups')
+
+    def __str__(self):
+        return self.name
+
+class StaffRole(ProfileMixin):
+    name = models.CharField(max_length=255)
+    policies = models.ManyToManyField(StaffPolicy, related_name='roles')
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through='StaffRoleAssignment', related_name='staff_roles')
+
+    def __str__(self):
+        return self.name
+
+class StaffRoleAssignment(ProfileMixin):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.ForeignKey(StaffRole, on_delete=models.CASCADE)
+    start_time = models.DateTimeField(default=timezone.now)
+    end_time = models.DateTimeField()
+
+    def is_active(self):
+        return self.start_time <= timezone.now() <= self.end_time
+
+    def __str__(self):
+        return f"{self.user} - {self.role} ({self.start_time} to {self.end_time})"
+
+
+class ObjectPermission(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='object_permissions')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    policies = models.ManyToManyField(StaffPolicy, related_name='object_permissions')
+
+    def __str__(self):
+        return f"{self.user} - {self.content_object}"
 class PrescriptionFillingPolicies(Policy):
     validity_period=models.IntegerField(
         default=5,

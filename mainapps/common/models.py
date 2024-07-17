@@ -128,12 +128,16 @@ class Address(models.Model):
     def __str__(self):
         return f'{self.street}, {self.city}, {self.region}, {self.country}'
     def clean(self):
-        validate_country(self.country.id)
-        validate_region(self.region.id)
-        validate_sub_region(self.subregion.id)
-        validate_city(self.city.id)
-        validate_region_belongs_to_country(self.region.id, self.country.id)
-        validate_city_belongs_to_sub_region(self.city.id, self.subregion.id)
+        if self.country:
+            validate_country(self.country.id)
+            if self.region:
+                validate_region(self.region.id)
+                if self.subregion:
+                    validate_sub_region(self.subregion.id)
+                    if self.city:
+                        validate_city(self.city.id)
+                        validate_region_belongs_to_country(self.region.id, self.country.id)
+                        validate_city_belongs_to_sub_region(self.city.id, self.subregion.id)
 
 
 

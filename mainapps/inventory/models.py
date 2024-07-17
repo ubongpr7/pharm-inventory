@@ -91,7 +91,7 @@ class InventoryCategory(MPTTModel):
         return self.name
     @classmethod
     def tabular_display(self):
-        return ['Name', 'Active','Parent','Descrition']
+        return [{"name":'Name'}, {'is_active':'Active'}]
 
 
 
@@ -239,10 +239,5 @@ class InventoryMixin(UUIDBaseModel):
             - **kwargs: Additional keyword arguments.
         """
         super().save(*args, **kwargs)
-
-
- 
-
-
 
 registerable_models=[Inventory,InventoryCategory]
