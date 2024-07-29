@@ -14,7 +14,7 @@
     <meta name="author" content="">
     {% block more_meta_tags %}
     {% endblock %}
-    <title>{% block page_title %}{% endblock page_title %}</title>
+    <title id="page-title">{% block page_title %}Intera Inventory{% endblock page_title %}</title>
     <link rel="icon" href="{% static 'images/logos/favicon.ico' %}" type="image/x-icon">
     <link href="{% static 'assets/dashboard/css/main.css' %}" rel="stylesheet"/>
     
@@ -25,7 +25,27 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap"
       rel="stylesheet">
+    <style>
+      .loader {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
     {% bootstrap_css %}
     {% block extra_style %}
     {% endblock extra_style %}
@@ -33,7 +53,7 @@
 {% endblock head %}
 {% block body %}
 <body>
-  
+  <div class="loader"></div>
   
   {% include 'dashboard/wrapper/modal.html' %}
 
@@ -42,9 +62,15 @@
     <div class="in-container in-offset-md-1" style="margin-left: 6rem; margin-top: 6rem; padding-right: 4rem;">
       {% bootstrap_messages %}
       
-          {% block content %}
+<div class="main-container-div" style="margin-top:3rem;" id="main-container-div" hx-history-elt>
+  <div class="main-container-div-content" id="main-container-div-content">
+    {% block content %}
   
-          {% endblock content %}
+    {% endblock content %}
+  </div>
+  <div class="main-container-div-form " style="margin-top: 2rem;"id="main-container-div-form"></div>
+</div>
+          
 <!-- 
           <div class="create-form" id="create-form">
       
@@ -65,7 +91,6 @@
     {% bootstrap_javascript %}
     <!-- <script src="{% static 'assets/dashboard/js/main.js' %}"></script> -->
     <script src="{% static 'assets/js/htmx_functions.js' %}"></script>
-    
     
     {% block extra_script %}
     {% endblock extra_script %}

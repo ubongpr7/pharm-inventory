@@ -15,6 +15,7 @@ from cities_light.models import Region, City,SubRegion
 
 from mainapps.common.context_helper import get_context_heper
 from mainapps.common.models import Unit
+from mainapps.utils.renderings import render_templete
 from .intera_messages import InteraMessages
 from mainapps.inventory.crud_logic import inventory_creation_logic
 from mainapps.inventory.forms import InVentoryForm, InventoryCategoryForm
@@ -117,7 +118,7 @@ class AjaxTabGenericUpdateView(LoginRequiredMixin, UpdateView):
         except Exception as error:
             form.add_error(None, error)
             print(error)
-            return render(self.request, 'common/htmx/create.html', self.get_context_data())
+            return render_templete(self.request, 'common/htmx/create.html','common/create.html', self.get_context_data())
 
     def form_invalid(self, form):
         try:
@@ -170,9 +171,8 @@ class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
     def get_template(self):
-        if self.request.htmx:
-            return ['common/htmx/create.html']
-        return ['common/create.html']
+        return render_templete(self.request, 'common/htmx/create.html','common/create.html', self.get_context_data())
+
     def form_valid(self, form):
         try:
 
@@ -225,7 +225,7 @@ class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
 class AjaxGenericList(ListView):
     paginate_by = 3
     context_object_name = 'items'
-    template_name='common/htmx/tabula_list.html'
+    # template_name='common/htmx/tabula_list.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         page = self.request.GET.get('page', 1)
@@ -236,8 +236,16 @@ class AjaxGenericList(ListView):
   
         return context
     def dispatch(self, request, *args, **kwargs):
+        print( 'this the request: ',request.htmx)
+        # print(self.request)
         management_dispatch_dispatcher(self=self,request=request)
         return super().dispatch(request, *args, **kwargs)
+    
+    def get_template_names(self):
+        if hasattr(self.request, 'htmx') and self.request.htmx:
+            return ['common/htmx/tabula_list.html']
+        else:
+            return ['common/tabula_list.html']
 
     def get_queryset(self):
         model = self.get_model()

@@ -1,0 +1,97 @@
+{% load static %}
+{% load bootstrap5 %}
+<div data-title="Add new {{type}}" class="container mt-4 cp-20">
+    <form id="create-form8" action="." method="post">
+        {% csrf_token %}
+        <div class="row mgb-20">
+<!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+    
+                <div class="col-lg-12 e-mg-y-10">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Companies </h5>                        
+                            <div id="list-container" data-url="{{ get_url }}">
+                    
+                                <!-- Companies will be loaded here via AJAX -->
+                            </div>
+                            <nav>
+                                <ul class="pagination" id="pagination-container"></ul>
+                            </nav>
+                            <a href="#" class="btn btn-primary">View All</a>
+                        </div>
+                    </div>
+                </div>
+        </div>
+                <br>
+<!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+
+                <div class="col-lg-12 e-mg-y-10 ">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Create {{ type }} </h5>
+                            {% bootstrap_form form %}
+                        </div>
+                    </div>
+                </div>
+                <br>
+
+
+                <!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+         <div class="row mgb-20">
+
+            <div class="col-lg-12 col-md-12 col-sm-12 e-mg-y-10">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ type }} Address</h5>
+                        <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
+                        {{ addresses.management_form }}
+                        <div id="addresses-formset">
+                                <div class="form-group">
+                                    {% bootstrap_formset addresses layout='horizontal' %}
+                                    <hr>
+                                </div>
+
+                            </div>
+                            
+                    </div>
+                </div>
+            </div>
+            <br>
+            
+<!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+
+
+            <div class="col-lg-12 col-md-12 col-sm-12 border-box e-mg-y-10">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"> Contact Person</h5>
+                        {{ contacts.management_form }}
+                        <div id="contacts-formset">
+                                <div class="form-group">
+                                    {% bootstrap_formset contacts layout='horizontal' %}
+                                    <hr>
+                                </div>
+
+                
+                        </div>
+                
+                    </div>
+                </div>
+                <br>
+                
+            </div>
+
+            <br>
+
+<!-- ########################################################################################$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+
+            
+        </div>
+        <div class="d-flex justify-content-between mt-3">
+
+            <button type="submit" id="add-another1" class="btn btn-primary">Save </button>
+        </div>
+
+    </form>
+
+</div>

@@ -16,8 +16,14 @@ from .forms import *
 
 
 class CompanyCreateView(CreateView,LoginRequiredMixin):
-    template_name = 'common/create_inline.html'
+    # template_name = 'common/create_inline.html'
     success_url = reverse_lazy('common:home')
+
+    def get_template_names(self):
+        if hasattr(self.request, 'htmx') and self.request.htmx:
+            return ['common/htmx/create_inline.html']
+        else:
+            return ['common/create_inline.html']
 
     def get_form_class(self):
 
@@ -71,9 +77,6 @@ class CompanyCreateView(CreateView,LoginRequiredMixin):
                 addresses.instance = self.object
                 addresses.save()
                 
-            # if self.request.method=="POST":
-            #     print('success')
-            #     return JsonResponse({'success': True, 'redirect_url': self.success_url})
             return super(CompanyCreateView,self).form_valid(form)
     def dispatch(self, request, *args, **kwargs):
         management_dispatch_dispatcher(self=self,request=request)

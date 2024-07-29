@@ -26,27 +26,27 @@
                     {% for model in models %}
                         {% if  model == 'Company'%}
                             <li class="nav-item">
-                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'customer'  %}">
+                                <a class="nav-link in-fs-14 in-fw-bld" hx-trigger="click"  hx-push-url="true" hx-target="#main-container-div-content" hx-get="{% url 'company:company_create' user.company.encrypted_id  'customer'  %}">
                                     <i class="bi bi-people in-fs-14 in-fw-bld"></i>
                                     <span>Customers</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'manufacturer'  %}">
+                                <a class="nav-link in-fs-14 in-fw-bld" hx-trigger="click" hx-push-url="true" hx-target="#main-container-div-content" hx-get="{% url 'company:company_create' user.company.encrypted_id  'manufacturer'  %}">
                                     <i class="bi bi-tools in-fs-14 in-fw-bld"></i>
                                      <span>Manufacture</span>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link in-fs-14 in-fw-bld" href="{% url 'company:company_create' user.company.encrypted_id  'supplier'  %}">
+                            <!-- <li class="nav-item">
+                                <a class="nav-link in-fs-14 in-fw-bld" hx-trigger="click" hx-push-url="true" hx-target="#main-container-div-content" hx-get="{% url 'company:company_create' user.company.encrypted_id  'supplier'  %}">
                                     <i class="bi bi-truck in-fs-14 in-fw-bld"></i>
-                                     <span>Manufacture</span>
+                                     <span>Supplier</span>
                                 </a>
-                            </li>
+                            </li> -->
                         {% else %}
 
                             <li class="nav-item">
-                                <a class="nav-link in-fs-14 in-fw-bld" href="" data-target-div="{{model.get_label}}-content" hx-target="#{{model.get_label}}-content" hx-trigger="click" hx-get="{% url 'common:item_list'  app.lower user.company.encrypted_id  model.get_label %}">{{model.get_verbose_names}}</a>
+                                <a class="nav-link in-fs-14 in-fw-bld" href="" data-target-div="main-container-div-content" hx-target="#main-container-div-content" hx-trigger="click" hx-get="{% url 'common:item_list'  app.lower user.company.encrypted_id  model.get_label %}" hx-push-url="true">{{model.get_verbose_names}}</a>
                             </li>
                         {%endif%}
                     {% endfor %}

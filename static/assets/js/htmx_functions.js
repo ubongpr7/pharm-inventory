@@ -1,3 +1,26 @@
+
+document.addEventListener('htmx:afterOnLoad', function(evt) {
+  const contentDiv = evt.detail.target;
+  console.log('target: ', contentDiv)
+  const newTitle = contentDiv.querySelector('[data-title]')?.getAttribute('data-title');
+  if (newTitle){
+    document.getElementById('page-title').innerText = newTitle;
+
+  }
+});
+
+
+document.addEventListener('htmx:configRequest', function(evt) {
+  document.querySelector('.loader').style.display = 'block';
+});
+
+document.addEventListener('htmx:afterOnLoad', function(evt) {
+  document.querySelector('.loader').style.display = 'none';
+});
+
+document.addEventListener('htmx:afterSwap', function(evt) {
+  document.querySelector('.loader').style.display = 'none';
+});
 ; (function () {
     const modal = new bootstrap.Modal(document.getElementById("modal"))
 
@@ -8,6 +31,7 @@
       }
     })
 
+    
     htmx.on("htmx:beforeSwap", (e) => {
       // Empty response targeting #dialog => hide the modal
       if (e.detail.target.id == "dialog" && !e.detail.xhr.response) {
@@ -25,6 +49,7 @@
     })
     
   })()
+
   ; (function () {
     const toastElement = document.getElementById("toast")
     const toastBody = document.getElementById("toast-body")
@@ -55,3 +80,15 @@ document.querySelectorAll('a[data-target-div]').forEach(anchor=>{
   
 }
 
+function showLoader() {
+  document.querySelector('.loader').style.display = 'block';
+}
+
+function hideLoader() {
+  document.querySelector('.loader').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  hideLoader();
+})
+showLoader()

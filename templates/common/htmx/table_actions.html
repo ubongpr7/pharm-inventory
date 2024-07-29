@@ -2,8 +2,8 @@
             
     <div class="in-actions in-d-flex in-justify-between">
         {% if user.company %}
-        <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld "  hx-target="#{{model_label}}-form" hx-get="{% url 'common:update_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-10 ri-eye-line "></i> </a>
-        <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld "  hx-target="#{{model_label}}-form" hx-get="{% url 'common:update_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-10 ri-edit-line "></i> </a>
+        <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld "  hx-target="#main-container-div-form" hx-get="{% url 'common:update_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-10 ri-eye-line "></i> </a>
+        <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld "  hx-target="#main-container-div-form" hx-get="{% url 'common:update_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-10 ri-edit-line "></i> </a>
         <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld   "  hx-target="#dialog" hx-get="{% url 'common:delete_item' app_label user.company.encrypted_id model_label item.pk %}"> <i class="ri in-fs-10 ri-delete-bin-5-line "></i> </a>
         {% elif user.profile %}    
             <a href="" style="text-decoration: none;color:black;" class="in-card__title in-fw-bld in-btn-danger in-btn in-btn-sq"  hx-target="#dialog" hx-get="{% url 'common:delete_item' app_label user.profile.encrypted_id model_label item.pk %}"> <i class="ri in-fs-20 ri-delete-bin-5-line "></i> </a>
