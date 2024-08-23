@@ -39,7 +39,7 @@ class HomEPage(TemplateView):
 """
 
 
-class AjaxGenericDetailView(DetailView):
+class GenericDetailView(DetailView):
     template_name = 'common/htmx/detail.html'
     context_object_name = 'item'
 
@@ -62,7 +62,7 @@ class AjaxGenericDetailView(DetailView):
         return context
 
 
-class AjaxTabGenericUpdateView(LoginRequiredMixin, UpdateView):
+class GenericUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'common/htmx/create.html' 
     success_url = '/'
 
@@ -140,7 +140,7 @@ class AjaxTabGenericUpdateView(LoginRequiredMixin, UpdateView):
 
 
 
-class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
+class GenericCreateView(LoginRequiredMixin,CreateView):
     template_name = 'common/htmx/create.html'
     success_url='/'
     def get_model(self):
@@ -222,7 +222,7 @@ class AjaxTabGenericCreateView(LoginRequiredMixin,CreateView):
 
 
 
-class AjaxGenericList(ListView):
+class GenericList(ListView):
     paginate_by = 3
     context_object_name = 'items'
     # template_name='common/htmx/tabula_list.html'
