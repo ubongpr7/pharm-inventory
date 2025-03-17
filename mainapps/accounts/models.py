@@ -3,23 +3,15 @@ import random
 from PIL import Image
 from django.db import models
 from django.urls import reverse
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
 from django.db.models import Q
-
-
-from django_countries.fields import CountryField
-
 from django.conf import settings
-from django.contrib.auth.models import User,PermissionsMixin
-
-from django.urls import reverse
+from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-
 from mainapps.common.models import Address
-from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.inventory.helpers.field_validators import *
-from django.db import models
+
 
 class ResidentialAddress(Address):
     
@@ -38,22 +30,48 @@ SEX=(
     ("female",_("Female")),
 )
 
-class UserManager(UserManager):
-    def search(self, query=None):
-        qs = self.get_queryset()
-        if query is not None:
-            or_lookup = (Q(username__icontains=query) | 
-                         Q(first_name__icontains=query)| 
-                         Q(last_name__icontains=query)| 
-                         Q(email__icontains=query)
-                        )
-            qs = qs.filter(or_lookup).distinct() # distinct() is often necessary with Q lookups
-        return qs
 
 def get_upload_path(instance,filename):
     return os.path.join('images','avartar',str(instance.pk,filename))
 
-class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
+
+
+
+class CustomUserManager(BaseUserManager):
+    def search(self, query=None):
+        qs = self.get_queryset()
+        if query is not None:
+            or_lookup = (Q(email__icontains=query) | 
+                            Q(first_name__icontains=query)| 
+                            Q(last_name__icontains=query)| 
+                            Q(email__icontains=query)
+                        )
+            qs = qs.filter(or_lookup).distinct() # distinct() is often necessary with Q lookups
+        return qs
+
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+
+    def create_superuser(self, email, password=None, **extra_fields):
+            extra_fields.setdefault("is_staff", True)
+            extra_fields.setdefault("is_superuser", True)
+
+            if not extra_fields.get("is_staff"):
+                raise ValueError("Superuser must have is_staff=True.")
+            if not extra_fields.get("is_superuser"):
+                raise ValueError("Superuser must have is_superuser=True.")
+
+            user = self.create_user(email, password, **extra_fields)
+            return user
+
+class User(AbstractUser, PermissionsMixin,models.Model):
     phone = models.CharField(
         max_length=60, 
         blank=True, 
@@ -66,7 +84,7 @@ class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
         null=True
     
         )
-    email = models.EmailField(blank=False, null=True)
+    email = models.EmailField(blank=False, null=True,unique=True)
     sex=models.CharField(
         max_length=20,
         choices=SEX,
@@ -74,6 +92,7 @@ class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
         blank=True,
         null=True
     )
+    is_verified=models.BooleanField(default=False)
     is_staff=models.BooleanField(default=False)
     is_subscriber=models.BooleanField(default=False)
     is_worker=models.BooleanField(default=False, editable=False)
@@ -94,10 +113,14 @@ class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
     )
     
     
-    objects = UserManager()
-
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+    objects = CustomUserManager()
+  
     def save(self, *args, **kwargs):
+        self.username = self.email
         super().save(*args, **kwargs)
+
 
         try:
             img = Image.open(self.picture.path)
@@ -111,15 +134,13 @@ class User(AbstractUser, PermissionsMixin,UUIDBaseModel):
 
     @property
     def get_full_name(self):
-        full_name = self.username
+        full_name = self.email
         if self.first_name and self.last_name:
             full_name = self.first_name + " " + self.last_name
         return full_name
 
-    # def __str__(self):
-    #     return '{} ({})'.format(self.username, self.get_full_name)
     def __str__(self):
-        return self.username
+        return self.email
 
     @property
     def get_user_role(self):
@@ -164,7 +185,7 @@ class VerificationCode(models.Model):
             code_list.append(n)
         code_string="".join(str(i)  for i in code_list)
         self.code=code_string
-        self.slug=self.user.username
+        self.slug=self.user.email
         super().save( *args,**kwargs)
     
     class Meta:

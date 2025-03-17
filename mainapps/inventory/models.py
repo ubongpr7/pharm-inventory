@@ -7,6 +7,9 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from mainapps.common.custom_fields import MoneyField
+from mainapps.common.settings import DEFAULT_CURRENCY_CODE, currency_code_mappings
+from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
@@ -14,7 +17,9 @@ from django.utils.translation import gettext_lazy as _
 
 from mainapps.common.models import TypeOf, Unit
 from mainapps.content_type_linking_models.models import UUIDBaseModel
-from mainapps.management.models import CompanyProfile, InventoryPolicy
+from mainapps.management.models import CompanyProfile, InventoryPolicy, InventoryProperty
+from django.db import models, transaction
+from django.db.models import F
 
 
 
@@ -22,7 +27,24 @@ from mainapps.management.models import CompanyProfile, InventoryPolicy
 
 
 class InventoryCategory(MPTTModel):
-
+    
+    structural = models.BooleanField(
+        default=False,
+        verbose_name=_('Structural'),
+        help_text=_(
+            'Parts may not be directly assigned to a structural category, '
+            'but may be assigned to child categories.'
+        ),
+    )
+    default_location = TreeForeignKey(
+        'stock.StockLocation',
+        related_name='default_categories',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_('Default Location'),
+        help_text=_('Default location for parts in this category'),
+    )
     name = models.CharField(
         max_length=200, 
         unique=True, 
@@ -86,101 +108,157 @@ class InventoryCategory(MPTTModel):
 
 
     def __str__(self):
-        # if self.profile:
-            # return f'{self.name} {self.profile}'
         return self.name
     @classmethod
     def tabular_display(self):
         return [{"name":'Name'}, {'is_active':'Active'}]
 
 
+class Inventory(InventoryProperty):
+    """
+    Represents a complete inventory system within an organization.
+    Tracks all aspects of inventory management including stock items,
+    categorization, and policy enforcement.
+    
+    Attributes:
+        name (str): Unique identifier for the inventory system
+        description (str): Detailed operational context for the inventory
+        category (InventoryCategory): Hierarchical classification
+        unit (Unit): Measurement system for stock items
+        profile (CompanyProfile): Owning organization
+        inventory_type (TypeOf): Operational classification type
+    """
+    
 
-class Inventory(InventoryPolicy):
-    """
-    - Represents an inventory in the system.
-    - Attributes:
-        - name (str): The name of the inventory.
-        - description (str): A detailed description of the inventory.
-        - created_by (User): The user who created the inventory.
-        - created_at (DateTime): The date and time when the inventory was created.
-        - updated_at (DateTime): The date and time when the inventory was last updated.
-        - category (Category): The category to which the inventory belongs.
-        - organisation 
-    """
+    name = models.CharField(
+        _("Inventory Name"),
+        max_length=255,
+        help_text=_("Unique identifier for this inventory system")
+    )
+    
+    description = models.TextField(
+        _("Description"),
+        blank=True,
+        null=True,
+        help_text=_("Detailed operational context and usage notes")
+    )
+    default_supplier = models.ForeignKey(
+        'company.Company',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_('Default Supplier'),
+        help_text=_('Default supplier For the Inventory'),
+        related_name='default_inventories',
+        limit_choices_to={'is_supplier': True},
+
+    )
+    
+    inventory_type = models.ForeignKey(
+        TypeOf,
+        verbose_name=_("Inventory Type"),
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to={'which_model': 'inventory'},
+        help_text=_("Classification based on operational purpose")
+    )
+    
+    profile = models.ForeignKey(
+        CompanyProfile,
+        verbose_name=_("Owning Organization"),
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='inventories',
+        help_text=_("Organization responsible for this inventory")
+    )
+    
+    category = models.ForeignKey(
+        InventoryCategory,
+        verbose_name=_("Classification Category"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='inventories',
+        help_text=_("Hierarchical grouping for inventory items")
+    )
+    
+    unit = models.ForeignKey(
+        Unit,
+        verbose_name=_("Measurement Unit"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='inventories',
+        help_text=_("Standard measurement system for stock items (e.g., pieces, kg)")
+    )
+    IPN = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('IPN'),
+        help_text=_('Internal Part Number'),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Created By"),
+        on_delete=models.CASCADE,
+        related_name='inventories',
+        editable=False
+    )
+
+    
+    officer_in_charge = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Created By"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inventories_incharge',
+        editable=False
+    )
+    
+    created_at = models.DateTimeField(
+        _("Creation Date"),
+        auto_now_add=True
+    )
+    
+    updated_at = models.DateTimeField(
+        _("Last Updated"),
+        auto_now=True
+    )
+    
+    
     class Meta:
         verbose_name_plural = 'Inventories'
         ordering = ['-created_at']
         constraints=[
-            models.UniqueConstraint(fields=['name','profile'],name='unique_inventory_name_profile')
+            models.UniqueConstraint(fields=['external_system_id','profile'],name='unique_inventory_external_system_id_profile')
         ]
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Inventory "
-        return "Inventories "
-    @property
-    def get_label(self):
-        return 'inventory'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(profile=profile).count()
-    @classmethod
-    def tabular_display(self):
-        return [{'name':'Name'},{ "i_type":'Type'},{"category":'Category'},{"created_by":'Created by'},{"created_at":'Created at'},{"updated_at":'Last update'},{"unit":'Stock items unit'},{"minimum_stock_level":'Minimum stock level'},{"re_order_point": 'Reorder point'},{"re_order_quauntity":'Reorder quauntity'},{"recall_policy":'Recall policy'},{"expiration_policy":'Expiration policy'} ]
+    def generate_external_id(self):
+        """Atomically generate unique external ID in PROFILE_INITIALS-SEQ format"""
+        with transaction.atomic():
+            profile = CompanyProfile.objects.select_for_update().get(pk=self.profile.pk)
+            
+            initials = ''.join([word[0] for word in profile.name.split() if word])[:3].upper()
+            if len(initials) < 2:
+                initials = profile.name[:2].upper()
+                
+            # Get and increment the sequence number atomically
+            sequence_number = profile.inventory_sequence + 1
+            profile.inventory_sequence = F('inventory_sequence') + 1
+            profile.save(update_fields=['inventory_sequence'])
+            
+            # Refresh to get updated value
+            profile.refresh_from_db()
+            
+            return f"{initials}-{self.category.pk}{self.profile.owner.pk}-{profile.inventory_sequence:04d}"
 
-
-    name = models.CharField(
-        max_length=255,
-        blank=False,
-        verbose_name='Inventory name*'
     
-    )
-    i_type=models.ForeignKey(
-        TypeOf,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=False,
-        limit_choices_to={'which_model':'inventory'},
-        verbose_name='Type of  inventory*',
-    )
-    
-    profile=models.ForeignKey(
-        CompanyProfile,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=False,
-        editable=False,
-        related_name='inventories',
-        related_query_name='inventory'
-
-
-    )
-    
-    description = models.TextField(null=True,blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
-        related_name='inventories',
-        editable=False
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    category = models.ForeignKey(
-        InventoryCategory, 
-        on_delete=models.SET_NULL, 
-        blank=True,
-        null=True,
-        related_name='inventories'
-    )
-    unit = models.ForeignKey(
-        Unit, 
-        on_delete=models.SET_NULL, 
-        blank=True,
-        verbose_name='Unit of measurement',
-        help_text='Set unit for items in this inventory e.g pieces,cm,m...',
-        null=True,
-        related_name='inventories'
-    )
+    def save(self, *args, **kwargs):
+        if not self.external_system_id:
+            
+            self.external_system_id = self.generate_external_id()
+        super().save(*args, **kwargs)
     
     def get_absolute_url(self):
         return f'/inventory/details/{self.pk}/'
@@ -192,6 +270,17 @@ class Inventory(InventoryPolicy):
             raise ValidationError({'minimum_stock_level': f'Minimum stock level {self.minimum_stock_level} cannot be greater than Reorder point {self.re_order_point}'})
         if self.re_order_point> self.re_order_quauntity:
             raise ValidationError({'re_order_point': f'Reorder stock level {self.re_order_point} cannot be greater than Reorder quantity {self.re_order_quauntity}'})
+        if self.minimum_stock_level > self.re_order_point:
+            raise ValidationError(...)
+    
+        if self.safety_stock_level < 0:
+            raise ValidationError("Safety stock cannot be negative")
+            
+        if self.expiration_threshold < 0:
+            raise ValidationError("Expiration threshold must be positive")
+            
+        if self.supplier_lead_time < 0:
+            raise ValidationError("Lead time cannot be negative")
 
 class InventoryManager(models.Manager):
     """
@@ -239,5 +328,201 @@ class InventoryMixin(UUIDBaseModel):
             - **kwargs: Additional keyword arguments.
         """
         super().save(*args, **kwargs)
+class InventoryPricing(InventoryMixin):
 
-registerable_models=[Inventory,InventoryCategory]
+    currency = models.CharField(
+        default=DEFAULT_CURRENCY_CODE,
+        blank=True,
+        max_length=12,
+        verbose_name=_('Base Currency'),
+        help_text=_('Set company default currency'),
+        validators=[validate_currency_code],
+        choices=currency_code_mappings(),
+    )
+    scheduled_for_update = models.BooleanField(default=False)
+
+
+
+    bom_cost_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum BOM Cost'),
+        help_text=_('Minimum cost of component parts'),
+    )
+
+    bom_cost_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum BOM Cost'),
+        help_text=_('Maximum cost of component parts'),
+    )
+
+    purchase_cost_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Purchase Cost'),
+        help_text=_('Minimum historical purchase cost'),
+    )
+
+    purchase_cost_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Purchase Cost'),
+        help_text=_('Maximum historical purchase cost'),
+    )
+
+    internal_cost_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Internal Price'),
+        help_text=_('Minimum cost based on internal price breaks'),
+    )
+
+    internal_cost_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Internal Price'),
+        help_text=_('Maximum cost based on internal price breaks'),
+    )
+
+    supplier_price_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Supplier Price'),
+        help_text=_('Minimum price of part from external suppliers'),
+    )
+
+    supplier_price_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Supplier Price'),
+        help_text=_('Maximum price of part from external suppliers'),
+    )
+
+    variant_cost_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Variant Cost'),
+        help_text=_('Calculated minimum cost of variant parts'),
+    )
+
+    variant_cost_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Variant Cost'),
+        help_text=_('Calculated maximum cost of variant parts'),
+    )
+
+    override_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Cost'),
+        help_text=_('Override minimum cost'),
+    )
+
+    override_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Cost'),
+        help_text=_('Override maximum cost'),
+    )
+
+    overall_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Cost'),
+        help_text=_('Calculated overall minimum cost'),
+    )
+
+    overall_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Cost'),
+        help_text=_('Calculated overall maximum cost'),
+    )
+
+    sale_price_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Sale Price'),
+        help_text=_('Minimum sale price based on price breaks'),
+    )
+
+    sale_price_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Sale Price'),
+        help_text=_('Maximum sale price based on price breaks'),
+    )
+
+    sale_history_min = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Minimum Sale Cost'),
+        help_text=_('Minimum historical sale price'),
+    )
+
+    sale_history_max = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum Sale Cost'),
+        help_text=_('Maximum historical sale price'),
+    )
+
+    
+
+registerable_models=[Inventory,InventoryCategory,InventoryPricing ]

@@ -1,8 +1,18 @@
-version: "3"
-
 services:
   web:
-    build:
-      command: python manage.py runserver 0.0.0.0:8000
-      ports: 
-        8000:8000
+    # image: ubongpr7/inventory:latest
+    image: nas415/crafterv5:latest
+    env_file:
+      - .env
+    command: >
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:7701
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "7701:7701"
+
+      

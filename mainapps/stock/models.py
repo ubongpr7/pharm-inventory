@@ -20,11 +20,63 @@ from mainapps.orders.models import *
 from django.utils.crypto import get_random_string
 
 from django.utils.text import slugify
-from mainapps.utils.statuses import StockStatus
+# from mainapps.utils.statuses import StockStatus
 from mainapps.utils.generators import generate_batch_code
 from mainapps.utils.validators import validate_batch_code, validate_serial_number
 
 
+
+class StockStatus(models.IntegerChoices):
+    """
+    Integer choices for stock item status with additional metadata.
+    Inherits from IntegerChoices for Django integration.
+    """
+    
+    OK = 10, _('OK')
+    ATTENTION = 50, _('Attention needed')
+    DAMAGED = 55, _('Damaged')
+    DESTROYED = 60, _('Destroyed')
+    REJECTED = 65, _('Rejected')
+    LOST = 70, _('Lost')
+    QUARANTINED = 75, _('Quarantined')
+    RETURNED = 85, _('Returned')
+
+class TrackingType(models.IntegerChoices):
+    """
+    Types of stock tracking events with additional metadata
+    """
+    # Inbound Operations
+    RECEIVED = 10, _('Items received from supplier')
+    PURCHASE_ORDER_RECEIPT = 11, _('Received against purchase order')
+    RETURNED_FROM_CUSTOMER = 12, _('Items returned from customer')
+    
+    # Outbound Operations
+    SHIPPED = 20, _('Items shipped to customer')
+    SALES_ORDER_SHIPMENT = 21, _('Shipped against sales order')
+    CONSUMED_IN_BUILD = 22, _('Used in manufacturing process')
+    
+    # Internal Operations
+    STOCK_ADJUSTMENT = 30, _('Manual quantity adjustment')
+    LOCATION_CHANGE = 31, _('Moved between locations')
+    SPLIT_FROM_PARENT = 32, _('Split from parent stock')
+    MERGED_WITH_PARENT = 33, _('Merged with parent stock')
+    
+    # Quality Operations
+    QUARANTINED = 40, _('Placed in quarantine')
+    QUALITY_CHECK = 41, _('Quality inspection performed')
+    REJECTED = 42, _('Rejected during inspection')
+    
+    # System Events
+    STOCKTAKE = 50, _('Manual stock count performed')
+    AUTO_RESTOCK = 51, _('Automatic restock triggered')
+    EXPIRY_WARNING = 52, _('Near expiry date notification')
+    
+    # Status Changes
+    STATUS_CHANGE = 60, _('Stock status updated')
+    DAMAGE_REPORTED = 61, _('Damage reported on item')
+    
+    # Default/Unknown
+    OTHER = 0, _('Other Uncategorized tracking event')
 
 
 class StockLocationType(models.Model):
@@ -34,13 +86,7 @@ class StockLocationType(models.Model):
     Attributes:
         - name (str): Brief name for the stock location type (unique).
         - description (str): Longer form description of the stock location type (optional).
-        - icon (str): Icon class for the default icon for locations that have no icon set (optional).
     """
-    ICON_CHOICES = [
-        ('icon1', 'Icon 1'),
-        ('icon2', 'Icon 2'),
-        # Add other predefined icon choices
-    ]
 
     name = models.CharField(
         unique=True,
@@ -57,13 +103,6 @@ class StockLocationType(models.Model):
         help_text=_('Longer form description of the stock location type (optional)'),
     )
 
-    icon = models.CharField(
-        blank=True,
-        max_length=100,
-        choices=ICON_CHOICES,  # Use predefined choices for icons
-        verbose_name=_('Icon'),
-        help_text=_('Icon class for the default icon for locations that have no icon set (optional)'),
-    )
 
     class Meta:
         """Metaclass defines extra model properties."""
@@ -83,7 +122,6 @@ class StockLocation(InventoryMixin,MPTTModel):
     Stock locations can be hierarchical as required.
 
     Attributes:
-        - custom_icon (str): Icon class for the stock location (optional).
         - manager (User): User who manages the stock location (optional).
         - structural (bool): Indicates if stock items can be directly located into this stock location.
         - external (bool): Indicates if this is an external stock location.
@@ -102,6 +140,12 @@ class StockLocation(InventoryMixin,MPTTModel):
         """
         verbose_name = _('Stock Location')
         verbose_name_plural = _('Stock Locations')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['inventory', 'name'],
+                name='unique_location_name_per_inventory'
+            )
+        ]
 
     @classmethod
     def get_verbose_names(self,p=None):
@@ -161,17 +205,9 @@ class StockLocation(InventoryMixin,MPTTModel):
         help_text=_('Stock location type of this location'),
     )
 
-
     def __str__(self):
-        """
-        Returns a string representation of the stock location.
-
-        Returns:
-            str: String representation of the stock location.
-        """
-        return str(self.location_type) if self.location_type else 'Unnamed Location'
-
-
+        return f"{self.name} ({self.location_type.name})" if self.location_type else self.name
+    
 class StockItem(MPTTModel, InventoryMixin):
     """
     A StockItem object represents a quantity of physical instances of a part.
@@ -209,11 +245,6 @@ class StockItem(MPTTModel, InventoryMixin):
         related_name='children',
         help_text=_('Link to another StockItem from which this StockItem was created'),
     )
-    attributes= GenericRelation(
-        AttributeStore,
-        related_query_name='stock_items'
-        )
-    
 
     location = TreeForeignKey(
         StockLocation,
@@ -337,11 +368,20 @@ class StockItem(MPTTModel, InventoryMixin):
     )
 
     status = models.PositiveIntegerField(
-        default=StockStatus.OK.value,
-        choices=StockStatus.items(),
+        default=StockStatus.OK,
+        choices=StockStatus.choices,
         validators=[MinValueValidator(0)],
         verbose_name=_('Status'),
         help_text=_('Status of this StockItem '),
+    )
+
+    purchase_price = MoneyField(
+        max_digits=30,
+        decimal_places=7,
+        blank=True,
+        null=True,
+        verbose_name=_('Purchase Price'),
+        help_text=_('Single unit purchase price at the time of purchase'),
     )
     
 
@@ -350,22 +390,13 @@ class StockItem(MPTTModel, InventoryMixin):
         """Return the text representation of the status field."""
         return StockStatus.text(self.status)
 
-    purchase_price = MoneyField(
-        max_digits=19,
-        decimal_places=6,
-        blank=True,
-        null=True,
-        verbose_name=_('Purchase Price'),
-        help_text=_('Single unit purchase price at the time of purchase'),
-    )
-
     def get_absolute_url(self):
         """Return the absolute URL for the StockItem detail view."""
         return reverse('stock-item-detail', args=[str(self.pk)])
 
     def __str__(self):
         """Return a string representation of the StockItem."""
-        return f"{self.part} - {self.serial or ''} - {self.quantity} {self.part.unit}"
+        return f"{self.serial or ''} - {self.quantity} {self.part.unit}"
 
     class Meta:
         verbose_name = _('Stock Item')
@@ -383,7 +414,6 @@ class StockItem(MPTTModel, InventoryMixin):
         return self.objects.filter(inventory__profile=profile).count()
 
 
-
 class StockItemTracking(InventoryMixin):
     """Stock tracking entry - used for tracking history of a particular StockItem.
 
@@ -398,7 +428,7 @@ class StockItemTracking(InventoryMixin):
     """
 
 
-    tracking_type = models.IntegerField(default=0)
+    tracking_type = models.IntegerField(default=TrackingType.OTHER,choices=TrackingType.choices,)
 
     item = models.ForeignKey(
         StockItem, on_delete=models.CASCADE, related_name='tracking_info'
@@ -428,8 +458,15 @@ class StockItemTracking(InventoryMixin):
     @classmethod
     def return_numbers(self,profile) :
         return self.objects.filter(inventory__profile=profile).count()
-
-
-
+    class Meta:
+        indexes = [
+            models.Index(fields=['date', 'item'])
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(tracking_type__in=TrackingType.values),
+                name='valid_tracking_type'
+            )
+        ]
 
 registerable_models=[StockLocationType,StockLocation,StockItemTracking,StockItem,]

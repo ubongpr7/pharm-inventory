@@ -24,6 +24,16 @@ def currency_code_mappings():
     return choices
 
 # print(currency_code_default())
+def get_company_or_profile(user):
+    company=None
+    try:
+        company = user.company
+    except user._meta.get_field("company").related_model.DoesNotExist:
+        try:
+            company = user.profile.company
+        except user._meta.get_field("profile").related_model.DoesNotExist:
+            company = None
 
+    return company
 
 
