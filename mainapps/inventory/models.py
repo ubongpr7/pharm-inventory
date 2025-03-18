@@ -328,6 +328,7 @@ class InventoryMixin(UUIDBaseModel):
             - **kwargs: Additional keyword arguments.
         """
         super().save(*args, **kwargs)
+
 class InventoryPricing(InventoryMixin):
 
     currency = models.CharField(
