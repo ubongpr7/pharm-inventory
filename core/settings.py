@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-pvc)e7cia$y25l0lc^b@#j+5c628x8+b(^eirvpgk3$z6^t8wh
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
