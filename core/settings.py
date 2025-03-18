@@ -286,6 +286,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     'http://3.212.68.52:3000',
     "https://intera-inventory.vercel.app",
+    "http://3.84.22.207:3000"
 
 ]
 
