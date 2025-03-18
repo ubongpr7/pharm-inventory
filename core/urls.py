@@ -38,15 +38,15 @@ urlpatterns = [
 
 
     path('api/v1/accounts/', include("mainapps.accounts.api.urls")),
-    path('accounts/', include("mainapps.accounts.urls",namespace='account')),
-    path('stock/', include("mainapps.stock.urls",namespace='stock')),
+    # path('accounts/', include("mainapps.accounts.urls",namespace='account')),
+    # path('stock/', include("mainapps.stock.urls",namespace='stock')),
     path('inventory_api/', include("mainapps.inventory.api.urls",)),
-    path('inventory/', include("mainapps.inventory.urls",namespace='inventory')),
-    path('company/', include("mainapps.company.urls",namespace='company')),
-    path('common/', include("mainapps.common.urls",namespace='common')),
+    # path('inventory/', include("mainapps.inventory.urls",namespace='inventory')),
+    # path('company/', include("mainapps.company.urls",namespace='company')),
+    # path('common/', include("mainapps.common.urls",namespace='common')),
     path('common_api/', include("mainapps.common.api.urls")),
     path('management_api/', include("mainapps.management.api.urls")),
-    path('management/', include("mainapps.management.urls",namespace='management')),
+    # path('management/', include("mainapps.management.urls",namespace='management')),
 
 
     # path('permission/', include("mainapps.permit.urls",namespace='permission')),
