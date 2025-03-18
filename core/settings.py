@@ -284,7 +284,8 @@ CORS_ALLOW_METHODS = (
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://intera-inventory.vercel.app"
+    'http://3.212.68.52:3000',
+    "https://intera-inventory.vercel.app",
 
 ]
 
