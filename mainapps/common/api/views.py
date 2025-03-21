@@ -1,7 +1,7 @@
 from rest_framework import generics
-from mainapps.common.models import TypeOf, Unit
+from mainapps.common.models import Currency, TypeOf, Unit
 from mainapps.common.settings import currency_code_mappings
-from .serializers import TypeOfSerializer, UnitSerializer
+from .serializers import CurrencySerializer, TypeOfSerializer, UnitSerializer
 from django.http import JsonResponse
 # views.py
 from rest_framework import generics
@@ -12,6 +12,13 @@ def get_currencies(request):
     currencies = currency_code_mappings()
     currency_list = [{"code": code, "name": name} for code, name in currencies]
     return JsonResponse({"currencies": currency_list})
+
+class CurrencyListView(generics.ListAPIView):
+    serializer_class = CurrencySerializer
+
+    def get_queryset(self):
+        return Currency.objects.all()
+        
 
 class TypeOfListView(generics.ListAPIView):
     serializer_class = TypeOfSerializer

@@ -72,3 +72,5 @@ urllib3==2.2.1
 virtualenv==20.26.2
 wheel==0.45.1
 whitenoise==6.9.0
+redis[hiredis]
+django-redis

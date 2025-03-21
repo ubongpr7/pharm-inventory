@@ -1,6 +1,6 @@
 # types/serializers.py
 from rest_framework import serializers
-from mainapps.common.models import TypeOf, Unit
+from mainapps.common.models import Currency, TypeOf, Unit
 from rest_framework import serializers
 from cities_light.models import Country, Region, SubRegion, City
 
@@ -10,6 +10,10 @@ class TypeOfSerializer(serializers.ModelSerializer):
         model = TypeOf
         fields = '__all__'
         depth = 1  # To show nested parent/children relationships
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = '__all__'
 
 
 

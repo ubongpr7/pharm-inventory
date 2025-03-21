@@ -23,7 +23,16 @@ from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.utils.statuses import *
 
+class PurchaseOrderLineItem(models.Model):
+    purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='line_items')
+    stock_item = models.ForeignKey('stock.StockItem', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
 
+    def save(self, *args, **kwargs):
+        self.total_price = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
 class TotalPriceMixin(models.Model):
     """Mixin which provides 'total_price' field for an order."""
 
@@ -87,10 +96,10 @@ class Order(InventoryMixin):
         blank=True, verbose_name=_('Link'), help_text=_('Link to an external page')
     )
 
-    target_date = models.DateField(
+    delivery_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_('Target Date'),
+        verbose_name=_('Delivery Date'),
         help_text=_(
             'Expected date for order delivery. Order will be overdue after this date.'
         ),
@@ -138,7 +147,7 @@ class Order(InventoryMixin):
         help_text=_('Company address for this order of the affiliated business'),
         related_name='+',
     )
-
+ 
 
 class PurchaseOrder(TotalPriceMixin, Order):
     """A PurchaseOrder represents goods shipped inwards from an external supplier.
@@ -206,17 +215,6 @@ class PurchaseOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='purchase_oders')
 
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Purchase Order"
-        return "Purchase Orders"
-    @property
-    def get_label(self):
-        return 'purchaseorder'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
 
 
 class SalesOrder(TotalPriceMixin, Order):
@@ -244,17 +242,6 @@ class SalesOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='sales_oders')
 
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Sales Order"
-        return "Salese Orders"
-    @property
-    def get_label(self):
-        return 'salesorder'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
 
 
 class SalesOrderShipment(InventoryMixin):
@@ -277,24 +264,7 @@ class SalesOrderShipment(InventoryMixin):
 
         # Shipment reference must be unique for a given sales order
         unique_together = ['order', 'reference']
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Sales Order Shipment"
-        return "Sales Order Shipments"
-    @property
-    def get_label(self):
-        return 'salesordershipment'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
-
-
-    # @staticmethod
-    # def get_api_url():
-    #     """Return the API URL associated with the SalesOrderShipment model."""
-    #     return reverse('api-so-shipment-list')
-
+   
     order = models.ForeignKey(
         SalesOrder,
         on_delete=models.CASCADE,
@@ -416,22 +386,7 @@ class ReturnOrder(TotalPriceMixin, Order):
         help_text=_('Date order was completed'),
     )
     attachment= GenericRelation(Attachment,related_query_name='return_oders')
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Return Order"
-        return "Return Orders"
-    @property
-    def get_label(self):
-        return 'returnorder'
-    @property
-    def get_icon(self):
-        return 'ri'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
-
-
+   
     
 
 registerable_models=[

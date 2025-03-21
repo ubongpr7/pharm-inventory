@@ -138,7 +138,12 @@ class Address(models.Model):
                         validate_region_belongs_to_country(self.region.id, self.country.id)
                         validate_city_belongs_to_sub_region(self.city.id, self.subregion.id)
 
-
+class Currency(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=10, unique=True)
+    def __str__(self):
+        return f"{self.name} ({self.symbol})"
+        
 
 
 class Attribute(models.Model):

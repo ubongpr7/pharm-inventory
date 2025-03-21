@@ -2,9 +2,12 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView,ListAPIView,RetrieveAPIView
+from rest_framework.generics import CreateAPIView,ListAPIView,RetrieveAPIView,ListCreateAPIView
 from django.utils.text import slugify
-
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.views.decorators.vary import vary_on_headers
 from mainapps.common.settings import get_company_or_profile
 from ..models import Inventory, InventoryCategory
 from .serializers import CreateInventoryCategorySerializer, InventoryCategorySerializer, InventorySerializer
@@ -33,17 +36,53 @@ class InventoryCreateAPIView(CreateAPIView):
         )
 
 
+# class InventoryListAPIView(ListAPIView):
+#     serializer_class = InventorySerializer
+#     permission_classes = [permissions.IsAuthenticated]
+#     def get_queryset(self):
+#         company=get_company_or_profile(self.request.user)
+#         queryset = Inventory.objects.all()
+        
+#         if company:
+#             queryset = queryset.filter(profile=company)
+            
+#         return queryset
+#     @method_decorator(cache_page(60 * 15,key_prefix='inventory_list'))
+#     @method_decorator(vary_on_headers('Authorization'))
+#     def list(self, request, *args, **kwargs):
+#         return super().list(request, *args, **kwargs)
+    
+
 class InventoryListAPIView(ListAPIView):
     serializer_class = InventorySerializer
     permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
-        company=get_company_or_profile(self.request.user)
-        queryset = Inventory.objects.all()
-        
+        company = get_company_or_profile(self.request.user)
+
         if company:
-            queryset = queryset.filter(profile=company)
-            
+            user = company.owner
+            cache_key = f'inventory_list_{user.id}'
+            queryset = cache.get(cache_key)
+            print(queryset)
+            if queryset is not None:
+                return queryset
+            else:
+                queryset = Inventory.objects.all()
+                queryset = queryset.filter(profile=company)
+
+
+        cache.set(cache_key, queryset, 60 * 15)
+
         return queryset
+
+    @staticmethod
+    def invalidate_cache_for_user(user):
+        """
+        Invalidate the cache for a specific user.
+        """
+        cache_key = f'inventory_list_{user.id}'
+        cache.delete(cache_key)
 
 
 class InventoryUpdateView(APIView):

@@ -15,7 +15,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from mainapps.common.models import TypeOf, Unit
+from mainapps.common.models import Currency, TypeOf, Unit
 from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.management.models import CompanyProfile, InventoryPolicy, InventoryProperty
 from django.db import models, transaction
@@ -331,15 +331,12 @@ class InventoryMixin(UUIDBaseModel):
 
 class InventoryPricing(InventoryMixin):
 
-    currency = models.CharField(
-        default=DEFAULT_CURRENCY_CODE,
-        blank=True,
-        max_length=12,
-        verbose_name=_('Base Currency'),
-        help_text=_('Set company default currency'),
-        validators=[validate_currency_code],
-        choices=currency_code_mappings(),
-    )
+    currency = models.ForeignKey(
+        Currency, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+        )
     scheduled_for_update = models.BooleanField(default=False)
 
 

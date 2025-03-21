@@ -245,7 +245,6 @@ class StockItem(MPTTModel, InventoryMixin):
         related_name='children',
         help_text=_('Link to another StockItem from which this StockItem was created'),
     )
-
     location = TreeForeignKey(
         StockLocation,
         on_delete=models.DO_NOTHING,
@@ -263,7 +262,6 @@ class StockItem(MPTTModel, InventoryMixin):
         verbose_name=_('Packaging'),
         help_text=_('Description of how the StockItem is packaged (e.g. "reel", "loose", "tape" etc)'),
     )
-
     belongs_to = models.ForeignKey(
         'self',
         verbose_name=_('Installed In'),
@@ -293,9 +291,17 @@ class StockItem(MPTTModel, InventoryMixin):
         help_text=_('Unique serial number for this StockItem'),
         validators=[validate_serial_number],
     )
-
+    
+    sku = models.CharField(
+        verbose_name=_('Stock keeping unit'),
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text=_('Stock keeping unit for this stock item'),
+        validators=[validate_serial_number],
+    )
     serial_int = models.IntegerField(default=0)
-
+    
     link = models.URLField(
         verbose_name=_('External Link'),
         blank=True,

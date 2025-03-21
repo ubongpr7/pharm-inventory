@@ -13,7 +13,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy as __
 from mainapps.content_type_linking_models.models import Attachment
-from mainapps.common.models import Address
+from mainapps.common.models import Address, Currency
 
 # from django_countries.fields import CountryField
 from mainapps.inventory.helpers.field_validators import validate_currency_code
@@ -71,7 +71,7 @@ class Company(models.Model):
         CompanyProfile,
         on_delete=models.SET_NULL,
         null=True,
-        blank=False,
+        blank=True,
         editable=False,
         related_name='companies',
         related_query_name='company'
@@ -88,9 +88,16 @@ class Company(models.Model):
     )
 
     website = models.URLField(
-        blank=True, verbose_name=_('Website'), help_text=_('Company website URL (optional)')
+        blank=True,null=True,
+        verbose_name=_('Website'),
+        help_text=_('Company website URL (optional)')
     )
-
+    short_address = models.CharField(
+        max_length=200,
+        verbose_name=_('Address'),
+        null=True,
+        blank=True,
+    )
     phone = models.CharField(
         max_length=15,
         verbose_name=_('Phone number'),
@@ -134,15 +141,14 @@ class Company(models.Model):
 
     
 
-    currency = models.CharField(
-        default=DEFAULT_CURRENCY_CODE,
-        blank=True,
-        max_length=12,
-        verbose_name=_('Currency'),
-        help_text=_('Default currency used for this company'),
-        validators=[validate_currency_code],
-        choices=currency_code_mappings(),
-    )
+    currency = models.ForeignKey(
+        Currency, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+        )
+
+    
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -164,6 +170,9 @@ class Company(models.Model):
 
     def get_absolute_url(self):
         return f'/company/company_detail/{self.pk}/'
+    # def save(self):
+
+    #     return super().save()
     def __str__(self):
         if self.created_by:
             return f'{self.name} -> {self.created_by}'
@@ -283,4 +292,4 @@ class CompanyAddress(Address):
         return self.title
 
 
-registerable_models=[CompanyAddress,Contact,Company]
+registerable_models=[Contact,Company]

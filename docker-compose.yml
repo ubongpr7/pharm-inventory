@@ -1,4 +1,14 @@
 services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - inventory_network
+    restart: unless-stopped
+
   web:
     image: ubongpr7/inventory:latest
     env_file:
@@ -10,7 +20,17 @@ services:
         python manage.py runserver 0.0.0.0:8000
       "
     volumes:
-      - .:/app
+      - .:/app  
     ports:
       - "8000:8000"
+    depends_on:
+      - redis  
     restart: unless-stopped
+    networks:
+      - inventory_network
+
+volumes:
+  redis_data:
+
+networks:
+  inventory_network:
