@@ -21,7 +21,7 @@ def get_company_or_profile(user):
         company = user.company
     except user._meta.get_field("company").related_model.DoesNotExist:
         try:
-            company = user.profile.company
+            company = user.profile
         except user._meta.get_field("profile").related_model.DoesNotExist:
             company = None
 

@@ -13,13 +13,15 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.signing import Signer
 from django.contrib.auth.models import Permission
 from mainapps.content_type_linking_models.models import Attachment
-from mainapps.common.models import Address, Country, TypeOf
+from mainapps.common.models import Address, Country, Currency, TypeOf
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.common.settings import  DEFAULT_CURRENCY_CODE, currency_code_mappings
 from mainapps.inventory.helpers.file_editors import UniqueFilename
 from django.utils import timezone
 from datetime import timedelta
 from django.utils import timezone
+
+from mainapps.permit.models import CustomUserPermission
 
 # Create your models here.
 class CompanyProfileAddress(Address):
@@ -33,20 +35,22 @@ class CompanyProfile(models.Model):
 
         verbose_name_plural = 'Company Profile'
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-        verbose_name='Company ID'
-    )
+    # id = models.UUIDField(
+    #     primary_key=True,
+    #     default=uuid.uuid4,
+    #     editable=False,
+    #     verbose_name='Company ID'
+    # )
+    # id = models.BigAutoField(primary_key=True)
+    po_sequence = models.PositiveIntegerField(default=0)
     inventory_sequence = models.PositiveIntegerField(default=0)
     owner = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         related_name='company',
         blank=True, 
-        # editable=False
+        editable=False
 
     )
     name = models.CharField(
@@ -142,15 +146,14 @@ class CompanyProfile(models.Model):
     )
     
 
-    currency = models.CharField(
-        default=DEFAULT_CURRENCY_CODE,
-        blank=True,
-        max_length=12,
-        verbose_name=_('Base Currency'),
-        help_text=_('Set company default currency'),
-        validators=[validate_currency_code],
-        choices=currency_code_mappings(),
+    currency=models.ForeignKey(
+        Currency,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
+
+
     headquarters_address = models.ForeignKey(
         CompanyProfileAddress,
         on_delete=models.SET_NULL,
@@ -485,14 +488,19 @@ class ProfileMixin(models.Model):
         """
         super().save(*args, **kwargs)
 
-
-
 class StaffPolicy(ProfileMixin):
+    
     name = models.CharField(max_length=255)
+    permissions = models.ManyToManyField(
+        CustomUserPermission,
+        related_name='policies',
+        blank=True
+    )
     description = models.TextField()
 
     def __str__(self):
         return self.name
+
 
 class StaffGroup(ProfileMixin):
     name = models.CharField(max_length=255)
@@ -501,38 +509,73 @@ class StaffGroup(ProfileMixin):
 
     def __str__(self):
         return self.name
-
+    
 class StaffRole(ProfileMixin):
     name = models.CharField(max_length=255)
-    policies = models.ManyToManyField(StaffPolicy, related_name='roles')
-    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through='StaffRoleAssignment', related_name='staff_roles')
+    policies = models.ManyToManyField(
+        'StaffPolicy',
+        through='RolePolicyAssignment',
+        related_name='roles'
+    )
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='StaffRoleAssignment',
+        related_name='staff_roles'
+    )
 
     def __str__(self):
         return self.name
 
+class RolePolicyAssignment(ProfileMixin):
+    """Connects Roles to Policies with additional context"""
+    role = models.ForeignKey(StaffRole, on_delete=models.CASCADE)
+    policy = models.ForeignKey('StaffPolicy', on_delete=models.CASCADE)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='assigned_policies'
+    )
+
+    class Meta:
+        unique_together = ('role', 'policy')
+        ordering = ['-assigned_at']
+
+    def __str__(self):
+        return f"{self.role} → {self.policy}"
+
 class StaffRoleAssignment(ProfileMixin):
+    """Manages temporal user-role assignments"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     role = models.ForeignKey(StaffRole, on_delete=models.CASCADE)
-    start_time = models.DateTimeField(default=timezone.now)
-    end_time = models.DateTimeField()
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
-    def is_active(self):
-        return self.start_time <= timezone.now() <= self.end_time
+    class Meta:
+        unique_together = ('user', 'role',)
+        ordering = ['-start_date']
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            StaffRoleAssignment.objects.filter(
+                user=self.user, 
+                role=self.role,
+                is_active=True
+            ).update(is_active=False)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_current(self):
+        now = timezone.now()
+        if self.end_date:
+            return self.start_date <= now <= self.end_date
+        return self.start_date <= now
 
     def __str__(self):
-        return f"{self.user} - {self.role} ({self.start_time} to {self.end_time})"
-
-
-class ObjectPermission(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='object_permissions')
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-    policies = models.ManyToManyField(StaffPolicy, related_name='object_permissions')
-
-    def __str__(self):
-        return f"{self.user} - {self.content_object}"
-
+        return f"{self.user} → {self.role} ({'active' if self.is_active else 'inactive'})"
+    
 
 
 class Policy(models.Model):
@@ -552,6 +595,8 @@ class Policy(models.Model):
     company=models.ForeignKey(
         CompanyProfile,
         on_delete=models.CASCADE,
+        editable=False
+
     )
     effective_date=models.DateField(
         null=True,
@@ -577,4 +622,26 @@ class PrescriptionFillingPolicies(Policy):
 
 
 
+class ActivityLog(ProfileMixin):
+    """
+    Tracks all user activities
+    """
+    ACTION_CHOICES = [
+        ('CREATE', 'Creation'),
+        ('UPDATE', 'Modification'),
+        ('DELETE', 'Deletion'),
+        ('APPROVE', 'Approval'),
+        ('CANCEL', 'Cancellation'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=200, choices=ACTION_CHOICES)
+    model_name = models.CharField(max_length=255)
+    object_id = models.PositiveIntegerField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict)
+
+    def __str__(self):
+        return f"{self.user} {self.action} {self.model_name} {self.object_id}"
+    
 registerable_models=[CompanyProfile,PrescriptionFillingPolicies,CompanyProfileAddress]    

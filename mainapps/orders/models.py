@@ -4,20 +4,20 @@ import os
 import sys
 from datetime import datetime
 from decimal import Decimal
-
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import F, Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
 
+from mainapps.management.models import CompanyProfile
 from mptt.models import TreeForeignKey
 
-
+from django.utils import timezone
 from mainapps.company.models import  Company, CompanyAddress, Contact 
-from mainapps.common.models  import User
+from mainapps.common.models  import Currency, User
 from mainapps.content_type_linking_models.models import Attachment
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.inventory.models import InventoryMixin 
@@ -33,6 +33,7 @@ class PurchaseOrderLineItem(models.Model):
     def save(self, *args, **kwargs):
         self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
+
 class TotalPriceMixin(models.Model):
     """Mixin which provides 'total_price' field for an order."""
 
@@ -49,15 +50,13 @@ class TotalPriceMixin(models.Model):
         help_text=_('Total price for this order'),
     )
 
-    order_currency = models.CharField(
-        max_length=3,
-        verbose_name=_('Order Currency'),
-        blank=True,
+    order_currency =models.ForeignKey(
+        Currency,
+        on_delete=models.SET_NULL,
         null=True,
-        help_text=_('Currency for this order (leave blank to use company default)'),
-        validators=[validate_currency_code],
+        blank=True,
     )
-    
+
 class Order(InventoryMixin):
     """
     Abstract model for an order.
@@ -105,10 +104,7 @@ class Order(InventoryMixin):
         ),
     )
 
-    creation_date = models.DateField(
-        blank=True, null=True, verbose_name=_('Creation Date')
-    )
-
+    
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -147,7 +143,33 @@ class Order(InventoryMixin):
         help_text=_('Company address for this order of the affiliated business'),
         related_name='+',
     )
- 
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    
+    def generate_reference(self, prefix):
+        """Atomically generate unique PO reference in PREFIX-YYYYMMDD-SEQ format"""
+        with transaction.atomic():
+            profile = CompanyProfile.objects.select_for_update().get(pk=self.inventory.profile.pk)
+            
+            date_str = timezone.now().strftime("%Y%m%d")
+            
+            sequence_number = profile.po_sequence + 1  # Add 'po_sequence' field to CompanyProfile
+            profile.po_sequence = F('po_sequence') + 1
+            profile.save(update_fields=['po_sequence'])
+            
+            # Refresh to get updated value
+            profile.refresh_from_db()
+            
+            # Build reference components
+            components = [
+                prefix.upper(),
+                date_str,
+                f"{self.inventory.id:03d}", 
+                f"{profile.po_sequence:04d}"
+            ]
+            
+            return '-'.join(components)
 
 class PurchaseOrder(TotalPriceMixin, Order):
     """A PurchaseOrder represents goods shipped inwards from an external supplier.
@@ -162,9 +184,9 @@ class PurchaseOrder(TotalPriceMixin, Order):
     reference = models.CharField(
         unique=True,
         max_length=64,
-        blank=False,
         verbose_name=_('Reference'),
         help_text=_('Order reference'),
+        editable=False,
     )
 
     status = models.PositiveIntegerField(
@@ -215,7 +237,10 @@ class PurchaseOrder(TotalPriceMixin, Order):
     )
     attachment= GenericRelation(Attachment,related_query_name='purchase_oders')
 
-
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = self.generate_reference("PO")
+        super().save(*args, **kwargs)
 
 class SalesOrder(TotalPriceMixin, Order):
     """A SalesOrder represents a list of goods shipped outwards to a customer."""

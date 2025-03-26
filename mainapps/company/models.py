@@ -69,7 +69,7 @@ class Company(models.Model):
     )
     profile=models.ForeignKey(
         CompanyProfile,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         editable=False,
@@ -179,9 +179,9 @@ class Company(models.Model):
         return self.name
 
 
+
 class Contact(models.Model):
     """A Contact represents a person who works at a particular company. A Company may have zero or more associated Contact objects.
-
     Attributes:
         - company: Company link for this contact
         - name: Name of the contact
@@ -203,7 +203,7 @@ class Contact(models.Model):
     name = models.CharField(max_length=100, verbose_name='Name')
 
     phone = models.CharField(
-        max_length=15, blank=True, verbose_name='Phone', validators=[alphanumeric_validator]
+        max_length=15, blank=True, verbose_name='Phone', 
     )
 
     email = models.EmailField(blank=True, null=True,verbose_name='Email')
@@ -230,7 +230,7 @@ class CompanyAddress(Address):
         - line2: Optional line two for address
         - postal_code: Postal code, city and state
         - country: Location country
-        - shipping_notes: Notes for couriers transporting shipments to this address
+        - shipping_notes: Notes for couriers transporting shipments to/from this address
         - internal_shipping_notes: Internal notes regarding shipping to this address
         - link: External link to additional address information
     """

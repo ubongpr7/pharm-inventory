@@ -12,6 +12,7 @@ from mainapps.content_type_linking_models.models import GenericModel
 User= settings.AUTH_USER_MODEL
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
+
 class ModelChoice(models.TextChoices):
     inventory='inventory','Inventory'
     stockitem='stock_item',"Stock item"
@@ -142,7 +143,7 @@ class Currency(models.Model):
     name = models.CharField(max_length=255, unique=True)
     code = models.CharField(max_length=10, unique=True)
     def __str__(self):
-        return f"{self.name} ({self.symbol})"
+        return f"{self.code}"
         
 
 

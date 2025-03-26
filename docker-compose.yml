@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: ubongpr7/inventory:latest
+    image: ubongpr7/inventoryv2:latest
     env_file:
       - .env
     command: >

@@ -31,6 +31,29 @@ class RootUserCreateSerializer(serializers.ModelSerializer):
 
         return user
 
+class StaffUserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField( required=True,)
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'email', 'password','phone',)
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'email': {'required': True}
+        }
+
+
+    def create(self, validated_data):
+        
+        user = User.objects.create_user(**validated_data)
+        user.is_main=False
+        user.is_worker=True
+        user.save()
+
+    
+
+        return user
+
 
 class LogoutSerializer(serializers.Serializer):
     refresh=serializers.CharField()

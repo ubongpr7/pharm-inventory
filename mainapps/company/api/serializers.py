@@ -1,23 +1,23 @@
 from rest_framework import serializers
-from ..models import Company, CompanyAddress
+from ..models import Company, CompanyAddress, Contact
 
 
 class CompanyAddressSerializer(serializers.ModelSerializer):
+    full_address=serializers.SerializerMethodField()
     class Meta:
         model = CompanyAddress
         fields = '__all__'
-        read_only_fields = ('id', 'company', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
+    def get_full_address(self, obj):
+        return f"{obj.apt_number}, {obj.street_number}, {obj.street}, {obj.region},"
+        return
 
-    def validate(self, data):
-        company = self.context['request'].user.companyprofile.company
-        title = data.get('title')
-        
-        if CompanyAddress.objects.filter(company=company, title=title).exists():
-            raise serializers.ValidationError({'title': 'Address with this title already exists for this company'})
-        
-        return data
-
-
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
+        read_only_fields = ['id']
+    
 class CompanySerializer(serializers.ModelSerializer):
     company_type=serializers.SerializerMethodField()
     base_currency=serializers.SerializerMethodField()
@@ -31,11 +31,14 @@ class CompanySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id','company_type']
     def get_company_type(self, obj):
+        company_type=[]
         if obj.is_customer:
-            return 'Customer'
-        elif obj.is_supplier:
-            return 'Supplier'
-        elif obj.is_manufacturer:
-            return 'Manufacturer'
+             company_type.append('Customer')
+        if obj.is_supplier:
+            company_type.append('Supplier')
+        if obj.is_manufacturer:
+            company_type.append('Manufacturer')
+        return ','.join(company_type)
+        
     def get_base_currency(self, obj):
         return obj.currency.code

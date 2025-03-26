@@ -10,11 +10,13 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
+from rest_framework.generics import ListAPIView 
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.generics import RetrieveAPIView
 from mainapps.accounts.models import User,VerificationCode
 from mainapps.accounts.views import send_html_email
+from mainapps.common.settings import get_company_or_profile
 from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
@@ -181,4 +183,45 @@ class RootUserRegistrationAPIView(APIView):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class StaffUserRegistrationAPIView(APIView):
+    """
+    Create new user with first name, email and password
+    """
+    # authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        print(request.data)
+
+        serializer = StaffUserCreateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            user = serializer.save()
+            company=get_company_or_profile(request.user)
+            user.profile=company
+            user.save()
+            password = serializer.validated_data.get('password')  # Get from validated data
+                
+            code=VerificationCode.objects.get(slug=user.email)
+            print(f'this is the code: {code}')
+            subject=f'Verification code: {code}. {user.first_name}'
+            message= f'Code: {code}, Password: {password}'
+            
+            html_file='accounts/verify.html'
+            to_email=user.email
+            send_html_email(subject, message, [to_email],html_file)
+            return Response({
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffUsersView(ListAPIView):
+    permission_classes=[IsAuthenticated]
+    serializer_class=MyUserSerializer
+    def get_queryset(self):
+        company=get_company_or_profile(self.request.user)
+        return User.objects.filter(profile=company)
+        

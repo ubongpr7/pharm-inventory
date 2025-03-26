@@ -53,7 +53,7 @@ class InventoryCategory(MPTTModel):
     )
     profile=models.ForeignKey(
         CompanyProfile,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         editable=False,
@@ -65,7 +65,7 @@ class InventoryCategory(MPTTModel):
     is_active = models.BooleanField(default=True)
     parent = TreeForeignKey(
         "self",
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="children",
         null=True,
         blank=True,
@@ -166,7 +166,7 @@ class Inventory(InventoryProperty):
     profile = models.ForeignKey(
         CompanyProfile,
         verbose_name=_("Owning Organization"),
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         related_name='inventories',
         help_text=_("Organization responsible for this inventory")
@@ -251,7 +251,7 @@ class Inventory(InventoryProperty):
             # Refresh to get updated value
             profile.refresh_from_db()
             
-            return f"{initials}-{self.category.pk}{self.profile.owner.pk}-{profile.inventory_sequence:04d}"
+            return f"{initials}-{self.category.pk}{self.profile.owner.pk}{self.profile.pk}-{profile.inventory_sequence:04d}"
 
     
     def save(self, *args, **kwargs):
@@ -312,7 +312,7 @@ class InventoryMixin(UUIDBaseModel):
         - objects (InventoryManager): Custom manager for querying objects based on inventory.
     """
 
-    inventory = models.ForeignKey(Inventory, on_delete=models.SET_NULL,null=True)
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE,null=True)
 
     objects = InventoryManager()
 

@@ -36,22 +36,6 @@ class InventoryCreateAPIView(CreateAPIView):
         )
 
 
-# class InventoryListAPIView(ListAPIView):
-#     serializer_class = InventorySerializer
-#     permission_classes = [permissions.IsAuthenticated]
-#     def get_queryset(self):
-#         company=get_company_or_profile(self.request.user)
-#         queryset = Inventory.objects.all()
-        
-#         if company:
-#             queryset = queryset.filter(profile=company)
-            
-#         return queryset
-#     @method_decorator(cache_page(60 * 15,key_prefix='inventory_list'))
-#     @method_decorator(vary_on_headers('Authorization'))
-#     def list(self, request, *args, **kwargs):
-#         return super().list(request, *args, **kwargs)
-    
 
 class InventoryListAPIView(ListAPIView):
     serializer_class = InventorySerializer
