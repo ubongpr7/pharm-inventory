@@ -74,3 +74,5 @@ wheel==0.45.1
 whitenoise==6.9.0
 redis[hiredis]
 django-redis
+celery
+django-filter

@@ -35,13 +35,6 @@ class CompanyProfile(models.Model):
 
         verbose_name_plural = 'Company Profile'
 
-    # id = models.UUIDField(
-    #     primary_key=True,
-    #     default=uuid.uuid4,
-    #     editable=False,
-    #     verbose_name='Company ID'
-    # )
-    # id = models.BigAutoField(primary_key=True)
     po_sequence = models.PositiveIntegerField(default=0)
     inventory_sequence = models.PositiveIntegerField(default=0)
     owner = models.OneToOneField(
@@ -132,7 +125,7 @@ class CompanyProfile(models.Model):
     )
 
     phone = models.CharField(
-        max_length=15,
+        max_length=20,
         verbose_name=_('Phone number'),
         blank=True,
         help_text=_('Contact phone number (optional)'),
@@ -488,71 +481,65 @@ class ProfileMixin(models.Model):
         """
         super().save(*args, **kwargs)
 
-class StaffPolicy(ProfileMixin):
-    
-    name = models.CharField(max_length=255)
-    permissions = models.ManyToManyField(
-        CustomUserPermission,
-        related_name='policies',
-        blank=True
-    )
-    description = models.TextField()
-
-    def __str__(self):
-        return self.name
-
 
 class StaffGroup(ProfileMixin):
     name = models.CharField(max_length=255)
-    policies = models.ManyToManyField(StaffPolicy, related_name='groups')
-    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='staff_groups')
-
+    permissions = models.ManyToManyField(
+        CustomUserPermission,
+        related_name='groups',
+        blank=True
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='groups_created',
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL,blank=True, related_name='staff_groups')
+    description = models.TextField(null=True, blank=True)
     def __str__(self):
         return self.name
     
 class StaffRole(ProfileMixin):
     name = models.CharField(max_length=255)
-    policies = models.ManyToManyField(
-        'StaffPolicy',
-        through='RolePolicyAssignment',
-        related_name='roles'
+    permissions = models.ManyToManyField(
+        CustomUserPermission,
+        related_name='roles',
+        blank=True,
     )
-    users = models.ManyToManyField(
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        through='StaffRoleAssignment',
-        related_name='staff_roles'
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='rolse_created',
+        editable=False,
     )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
 
-class RolePolicyAssignment(ProfileMixin):
-    """Connects Roles to Policies with additional context"""
-    role = models.ForeignKey(StaffRole, on_delete=models.CASCADE)
-    policy = models.ForeignKey('StaffPolicy', on_delete=models.CASCADE)
-    assigned_at = models.DateTimeField(auto_now_add=True)
+    
+class StaffRoleAssignment(ProfileMixin):
+    """Manages temporal user-role assignments"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='roles')
+    role = models.ForeignKey(StaffRole, on_delete=models.CASCADE,related_name='assignments')
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='assigned_policies'
+        related_name='assigned_roles',
+        editable=False,
+        help_text='User who assigned the role'
     )
-
-    class Meta:
-        unique_together = ('role', 'policy')
-        ordering = ['-assigned_at']
-
-    def __str__(self):
-        return f"{self.role} → {self.policy}"
-
-class StaffRoleAssignment(ProfileMixin):
-    """Manages temporal user-role assignments"""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.ForeignKey(StaffRole, on_delete=models.CASCADE)
-    start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
+    assigned_at = models.DateTimeField(default=timezone.now)
     class Meta:
         unique_together = ('user', 'role',)
         ordering = ['-start_date']
@@ -644,4 +631,4 @@ class ActivityLog(ProfileMixin):
     def __str__(self):
         return f"{self.user} {self.action} {self.model_name} {self.object_id}"
     
-registerable_models=[CompanyProfile,PrescriptionFillingPolicies,CompanyProfileAddress]    
+registerable_models=[CompanyProfile,PrescriptionFillingPolicies,ActivityLog,StaffRoleAssignment,StaffRole,StaffGroup,CompanyProfileAddress]    

@@ -15,7 +15,7 @@ from django.contrib.auth import authenticate, login as auth_login
 from mainapps.email_system.emails import send_html_email
 from mainapps.management.security.encripters import decrypt_data, management_dispatch_dispatcher
 
-from .models import CompanyProfile 
+from .models_activity import CompanyProfile 
 from .forms import *
 
 StaffUser= settings.AUTH_USER_MODEL

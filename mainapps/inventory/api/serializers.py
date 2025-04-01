@@ -1,11 +1,15 @@
-# serializers.py
 from rest_framework import serializers
 from mainapps.common.models import TypeOf, Unit
 from mainapps.inventory.models import Inventory, InventoryCategory
 from django.utils.translation import gettext_lazy as _
 
-from mainapps.management.models import ExpirePolicies, ForecastMethods, NearExpiryActions, RecallPolicies, ReorderStrategies
-
+from mainapps.management.models import( 
+    ExpirePolicies, 
+    ForecastMethods, 
+    NearExpiryActions, 
+    RecallPolicies, 
+    ReorderStrategies
+)
 class InventorySerializer(serializers.ModelSerializer):
     # Add explicit field declarations for foreign keys
     inventory_type = serializers.PrimaryKeyRelatedField(

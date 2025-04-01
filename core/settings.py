@@ -38,6 +38,7 @@ THIRD_PARTY_APPS=[
     'drf_yasg',
     'djoser',
     'social_django',
+    'schema_graph',
 ]
 CORE_APPS = [
     
@@ -184,20 +185,6 @@ AUTHENTICATION_BACKENDS = [
 
     'django.contrib.auth.backends.ModelBackend',
 ]
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA=['first_name', 'last_name']
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE=[
-'https://www.googleapis.com/userinfo.email',
-'https://www.googleapis.com/userinfo.profile',
-]
-
-SOCIAL_AUTH_FACEBOOK_SECRET=os.getenv('SOCIAL_AUTH_FACEBOOK_SECRET')
-SOCIAL_AUTH_FACEBOOK_KEY=os.getenv('SOCIAL_AUTH_FACEBOOK_KEY')
-SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS={
-    'fields':'email,first_name,last_name'
-}
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE=['email']
 import os
 from datetime import timedelta
 
@@ -215,11 +202,6 @@ DJOSER = {
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',  
 
     'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': os.getenv('SOCIAL_AUTH_ALLOWED_REDIRECT_URIS', '').split(','),
-
-    # 'EMAIL': {
-    #     'activation': 'mainapps.accounts.email.CustomActivationEmail',
-    #     'password_reset': 'mainapps.accounts.email.CustomPasswordResetEmail',
-    # },
 }
 
 
@@ -308,3 +290,7 @@ CACHES = {
         }
     }
 }
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+

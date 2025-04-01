@@ -3,6 +3,7 @@ from rest_framework.validators import UniqueValidator
 from mainapps.accounts.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from mainapps.permit.models import CustomUserPermission
 
 from django.contrib.auth.password_validation import validate_password
 
@@ -96,3 +97,21 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data 
     
            
+
+
+class UserPermissionSerializer(serializers.ModelSerializer):
+    permissions = serializers.SlugRelatedField(
+        many=True,
+        slug_field='codename',
+        queryset=CustomUserPermission.objects.all(),
+        source='custom_permissions'
+    )
+
+    class Meta:
+        model = User
+        fields = ('permissions',)
+        extra_kwargs = {
+            'permissions': {
+                'help_text': 'List of permission codenames to assign to the user'
+            }
+        }

@@ -67,14 +67,14 @@ class Order(InventoryMixin):
     - SalesOrder
 
     Attributes:
-        reference: Unique order number / reference / code
-        description: Long-form description (required)
-        notes: Extra note field (optional)
-        creation_date: Automatic date of order creation
-        created_by: User who created this order (automatically captured)
-        issue_date: Date the order was issued
-        complete_date: Date the order was completed
-        responsible: User (or group) responsible for managing the order
+        - reference: Unique order number / reference / code
+        - description: Long-form description (required)
+        - notes: Extra note field (optional)
+        - creation_date: Automatic date of order creation
+        - created_by: User who created this order (automatically captured)
+        - issue_date: Date the order was issued
+        - complete_date: Date the order was completed
+        - responsible: User (or group) responsible for managing the order
     """
 
     class Meta:

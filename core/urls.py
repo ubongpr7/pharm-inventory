@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
+from schema_graph.views import Schema
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -29,26 +29,18 @@ urlpatterns = [
     # djoser urls
     path('auth-api/', include('djoser.urls')),
     path('', include('djoser.urls.jwt')),
-    path('social_auth/', include('djoser.social.urls')),
+
     #  api endpoints docs
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    # path('ses/event-webhook/', SESEventWebhookView.as_view(), name='handle-event-webhook'),
-
+    path("schema/", Schema.as_view()),
 
     path('api/v1/accounts/', include("mainapps.accounts.api.urls")),
-    # path('accounts/', include("mainapps.accounts.urls",namespace='account')),
-    # path('stock/', include("mainapps.stock.urls",namespace='stock')),
     path('inventory_api/', include("mainapps.inventory.api.urls",)),
-    # path('inventory/', include("mainapps.inventory.urls",namespace='inventory')),
     path('company_api/', include("mainapps.company.api.urls",)),
     path('order_api/', include("mainapps.orders.api.urls",)),
-    # path('order/', include("mainapps.order.urls",namespace='common')),
+    path('permission_api/', include("mainapps.permit.api.urls",)),
     path('common_api/', include("mainapps.common.api.urls")),
     path('management_api/', include("mainapps.management.api.urls")),
-    # path('management/', include("mainapps.management.urls",namespace='management')),
-
-
-    # path('permission/', include("mainapps.permit.urls",namespace='permission')),
 ]

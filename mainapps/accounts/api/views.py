@@ -1,4 +1,3 @@
-from django.contrib.auth import login as api_login, logout as api_logout
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -13,13 +12,12 @@ from rest_framework import permissions
 from rest_framework.generics import ListAPIView 
 
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.generics import RetrieveAPIView
 from mainapps.accounts.models import User,VerificationCode
 from mainapps.accounts.views import send_html_email
 from mainapps.common.settings import get_company_or_profile
 from .serializers import *
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
+from mainapps.permit.permit import HasModelRequestPermission
 
 
 
@@ -188,7 +186,7 @@ class StaffUserRegistrationAPIView(APIView):
     Create new user with first name, email and password
     """
     # authentication_classes = []
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,HasModelRequestPermission]
 
     def post(self, request):
         print(request.data)
@@ -219,9 +217,9 @@ class StaffUserRegistrationAPIView(APIView):
 
 
 class StaffUsersView(ListAPIView):
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated,HasModelRequestPermission]
     serializer_class=MyUserSerializer
     def get_queryset(self):
         company=get_company_or_profile(self.request.user)
         return User.objects.filter(profile=company)
-        
+

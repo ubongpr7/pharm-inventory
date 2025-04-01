@@ -11,8 +11,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 from mainapps.common.models import Address
 from mainapps.inventory.helpers.field_validators import *
-from django.core.cache import cache
-from django.db.models import Prefetch
+
 
 from mainapps.permit.models import CustomUserPermission
 
@@ -153,14 +152,6 @@ class User(AbstractUser, PermissionsMixin,models.Model):
     def __str__(self):
         return self.email
 
-    @property
-    def get_user_role(self):
-        if self.is_superuser:
-            return "Admin"
-        elif self.is_customer:
-            return "Customer"
-        elif self.is_staff:
-            return "Staff"
         
 
     def get_picture(self):
@@ -175,53 +166,8 @@ class User(AbstractUser, PermissionsMixin,models.Model):
         if self.picture.url != settings.MEDIA_URL + 'default.png':
             self.picture.delete()
         super().delete(*args, **kwargs)
-    def get_all_permissions(self, refresh=False):
-        """
-        Returns company-scoped permissions from roles/groups + direct perms
-        """
-        cache_key = f'user_perms_{self.profile.id}_{self.id}'
-        
-        if not refresh:
-            perms = cache.get(cache_key)
-            if perms is not None:
-                return set(perms)
-
-        perms = set()
-
-        # Get company-specific permissions through roles
-        roles = self.staff_roles.filter(profile=self.profile).prefetch_related(
-            Prefetch('policies__permissions', 
-                    queryset=CustomUserPermission.objects.only('codename'))
-        )
-        for role in roles:
-            for policy in role.policies.all():
-                perms.update(policy.permissions.values_list('codename', flat=True))
-
-        groups = self.staff_groups.filter(profile=self.profile).prefetch_related(
-            Prefetch('policies__permissions',
-                    queryset=CustomUserPermission.objects.only('codename'))
-        )
-        for group in groups:
-            for policy in group.policies.all():
-                perms.update(policy.permissions.values_list('codename', flat=True))
-
-        perms.update(
-            self.custom_permissions.filter(
-                policy__profile=self.profile
-            ).values_list('codename', flat=True)
-        )
-
-        cache.set(cache_key, list(perms), 300)
-        return perms
-
-    def has_custom_perm(self, codename, refresh=False):
-        if self.profile.owner == self:
-            return True
-            
-        return codename in self.get_all_permissions(refresh)
-
-    def invalidate_perms_cache(self):
-        cache.delete(f'user_perms_{self.profile.company_id}_{self.id}')
+    
+    
 class VerificationCode(models.Model):
     user=models.OneToOneField(User,on_delete=models.CASCADE)
     code=models.CharField(max_length=6,blank=True)
