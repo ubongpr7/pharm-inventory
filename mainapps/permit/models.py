@@ -23,7 +23,6 @@ class CombinedPermissions(models.TextChoices):
     APPROVE_COMPANY = 'approve_company', _('Can approve company')
     REJECT_COMPANY = 'reject_company', _('Can reject company')
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings', _('Can manage company settings')
-    COMPANY_FULL_ACCESS = 'full_access_company', _('Can fully manage company')
 
     # Contact Permissions
     CREATE_CONTACT = 'create_contact', _('Can create contact')
@@ -31,7 +30,6 @@ class CombinedPermissions(models.TextChoices):
     UPDATE_CONTACT = 'update_contact', _('Can update contact')
     DELETE_CONTACT = 'delete_contact', _('Can delete contact')
     MANAGE_CONTACT_SETTINGS = 'manage_contact_settings', _('Can manage contact settings')
-    CONTACT_FULL_ACCESS = 'full_access_contact', _('Can fully manage contact')
 
     # Company Address Permissions
     CREATE_COMPANY_ADDRESS = 'create_company_address', _('Can create company address')
@@ -39,7 +37,6 @@ class CombinedPermissions(models.TextChoices):
     UPDATE_COMPANY_ADDRESS = 'update_company_address', _('Can update company address')
     DELETE_COMPANY_ADDRESS = 'delete_company_address', _('Can delete company address')
     MANAGE_COMPANY_ADDRESS_SETTINGS = 'manage_company_address_settings', _('Can manage company address settings')
-    COMPANY_ADDRESS_FULL_ACCESS = 'full_access_company_address', _('Can fully manage company address')
 
     # Inventory Permissions
     CREATE_INVENTORY = 'create_inventory', _('Can create inventory')
@@ -53,7 +50,6 @@ class CombinedPermissions(models.TextChoices):
     MANAGE_INVENTORY_SETTINGS = 'manage_inventory_settings', _('Can manage inventory settings')
     VIEW_INVENTORY_REPORTS = 'view_inventory_reports', _('Can view inventory reports')
     VIEW_DASHBOARD_REPORTS = 'can_view_dashboard', _('Can view Dashboard reports')
-    INVENTORY_FULL_ACCESS = 'full_access_inventory', _('Can fully manage inventory')
 
     CREATE_INVENTORY_CATEGORY = 'create_inventory_category', _('Can create inventory')
     READ_INVENTORY_CATEGORY = 'read_inventory_category', _('Can read inventory')
@@ -86,8 +82,11 @@ class CombinedPermissions(models.TextChoices):
     GENERATE_PURCHASE_ORDER_REPORTS = 'generate_purchase_order_reports', _('Can generate purchase order reports')
     NOTIFY_USERS_ABOUT_PURCHASE_ORDER_STATUS = 'notify_users_about_purchase_order_status', _('Can notify users about purchase order status')
     MANAGE_PURCHASE_ORDER_SETTINGS = 'manage_purchase_order_settings', _('Can manage purchase order settings')
-    PURCHASE_ORDER_FULL_ACCESS = 'full_access_purchase_order', _('Can fully manage purchase order')
 
+    CREATE_PURCHASE_ORDER_LINE_ITEM = 'create_purchase_order_line_item', _('Can create purchase order line item')
+    READ_PURCHASE_ORDER_LINE_ITEM = 'read_purchase_order_line_item', _('Can read purchase order line item')
+    UPDATE_PURCHASE_ORDER_LINE_ITEM = 'update_purchase_order_line_item', _('Can update purchase order line item')
+    DELETE_PURCHASE_ORDER_LINE_ITEM = 'delete_purchase_order_line_item', _('Can delete purchase order line item')
     # Sales Order Permissions
     CREATE_SALES_ORDER = 'create_sales_order', _('Can create sales order')
     READ_SALES_ORDER = 'read_sales_order', _('Can read sales order')
@@ -114,7 +113,6 @@ class CombinedPermissions(models.TextChoices):
     GENERATE_SALES_ORDER_REPORTS = 'generate_sales_order_reports', _('Can generate sales order reports')
     NOTIFY_USERS_ABOUT_SALES_ORDER_STATUS = 'notify_users_about_sales_order_status', _('Can notify users about sales order status')
     MANAGE_SALES_ORDER_SETTINGS = 'manage_sales_order_settings', _('Can manage sales order settings')
-    SALES_ORDER_FULL_ACCESS = 'full_access_sales_order', _('Can fully manage sales order')
 
     # Stock Item Permissions
     CREATE_STOCK_ITEM = 'create_stock_item', _('Can create stock item')
@@ -142,7 +140,6 @@ class CombinedPermissions(models.TextChoices):
     GENERATE_STOCK_ITEM_REPORTS = 'generate_stock_item_reports', _('Can generate stock item reports')
     NOTIFY_USERS_ABOUT_STOCK_ITEM_STATUS = 'notify_users_about_stock_item_status', _('Can notify users about stock item status')
     MANAGE_STOCK_ITEM_SETTINGS = 'manage_stock_item_settings', _('Can manage stock item settings')
-    STOCK_ITEM_FULL_ACCESS = 'full_access_stock_item', _('Can fully manage stock item')
 
 class CustomUserPermission(models.Model):
     codename = models.CharField(

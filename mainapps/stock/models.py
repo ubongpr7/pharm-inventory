@@ -235,7 +235,13 @@ class StockItem(MPTTModel, InventoryMixin):
           (if this item was purchased from an external supplier)
         - packaging: Description of how the StockItem is packaged (e.g. "reel", "loose", "tape" etc)
     """
-
+    name=models.CharField(
+        max_length=200,
+        null=True,
+        blank=False,
+        verbose_name=_('Name'),
+        help_text=_('Name of the stock item'),
+    )
     parent = TreeForeignKey(
         'self',
         verbose_name=_('Parent Stock Item'),
@@ -256,7 +262,7 @@ class StockItem(MPTTModel, InventoryMixin):
     )
 
     packaging = models.CharField(
-        max_length=50,
+        max_length=100,
         blank=True,
         null=True,
         verbose_name=_('Packaging'),

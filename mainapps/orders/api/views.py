@@ -5,8 +5,8 @@ from mainapps.management.models_activity.changes import get_field_changes
 from mainapps.permit.models import CombinedPermissions
 from mainapps.permit.permit import HasModelRequestPermission
 from middleware import permissions
-from ..models import PurchaseOrder
-from .serializers import PurchaseOrderSerializer
+from ..models import PurchaseOrder, PurchaseOrderLineItem
+from .serializers import PurchaseOrderLineItemSerializer, PurchaseOrderSerializer
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from mainapps.management.models_activity.activity_logger import log_user_activity
@@ -115,3 +115,31 @@ class PurchaseOrderListCreateView(generics.ListAPIView):
 
     def get_queryset(self):
         return super().get_queryset().filter(inventory__profile=self.request.user.profile)
+from rest_framework import viewsets
+class PurchaseOrderLineItemCreateView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasModelRequestPermission]
+    queryset = PurchaseOrderLineItem.objects.all()
+    serializer_class = PurchaseOrderLineItemSerializer
+    required_permission= {
+        'create': CombinedPermissions.CREATE_PURCHASE_ORDER_LINE_ITEM,
+        'update': CombinedPermissions.UPDATE_PURCHASE_ORDER_LINE_ITEM,
+        'retrieve': CombinedPermissions.READ_PURCHASE_ORDER_LINE_ITEM,
+        'destroy': CombinedPermissions.DELETE_PURCHASE_ORDER_LINE_ITEM,
+        'list': CombinedPermissions.READ_PURCHASE_ORDER_LINE_ITEM,
+    }
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        reference = self.request.query_params.get('reference')
+        if reference:
+            queryset = queryset.filter(purchase_order__reference=reference)
+        return queryset
+    def perform_create(self, serializer):
+        reference = self.request.query_params.get('reference')
+        purchase_order = PurchaseOrder.objects.get(reference=reference)
+        if purchase_order:
+            serializer.save(purchase_order=purchase_order)
+        else:
+            return Response({"detail": "Purchase order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return super().perform_create(serializer)
+   

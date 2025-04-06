@@ -12,10 +12,11 @@ urlpatterns = [
     
     path('staff/roles/', views.CreateRoleView.as_view(), name='role-create'),
     path('staff/roles/<str:id>/', views.RoleDetailView.as_view(), name='role-detail'),
-    path('staff/role/list', views.StaffRoleView.as_view(), name='role-list'),
+    path('staff/role/list/', views.StaffRoleView.as_view(), name='role-list'),
+    path('roles/<str:role_id>/deactivate/', views.RoleDeactivateView.as_view(), name='role-deactivate'),
     
     path('staff/groups/', views.CreateGroupView.as_view(), name='group-create'),
-    path('staff/groups/<str:id>/', views.GroupDetailView.as_view(), name='group-detail'),
+    path('staff/group-details/<str:id>/', views.GroupDetailView.as_view(), name='group-detail'),
     path('staff/group/list/', views.StaffGroupView.as_view(), name='group-list'),
 
 ]

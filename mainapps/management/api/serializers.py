@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from mainapps.company.models import Company, CompanyAddress, Contact
 from mainapps.inventory.models import Inventory, InventoryCategory
-from mainapps.management.models import ActivityLog, CompanyProfile,CompanyProfileAddress, StaffGroup, StaffRole
+from mainapps.management.models import ActivityLog, CompanyProfile,CompanyProfileAddress, StaffGroup, StaffRole, StaffRoleAssignment
 from rest_framework import serializers
 
 from mainapps.orders.models import PurchaseOrder
@@ -84,16 +84,23 @@ class StaffGroupSerializer(serializers.ModelSerializer):
 class StaffRoleSerializer(serializers.ModelSerializer):
     permission_num=serializers.SerializerMethodField()
     users_num=serializers.SerializerMethodField()
+
     class Meta:
         model = StaffRole
         fields = ['id','name','description','users_num','permission_num']
         read_only_fields = ['id','users_num','permission_num']
         
     def get_users_num(self,obj):
-        if obj.users.count():
             return obj.assignments.count()
-        return 0
     def get_permission_num(self,obj):
         if obj.permissions.count():
             return obj.permissions.count()
-        return 0
+    
+class StaffRoleAssignmentSerializer(serializers.ModelSerializer):
+    role_name=serializers.CharField(source='role.name',read_only=True)
+    class Meta:
+        model = StaffRoleAssignment
+        fields = ['id','role_name','is_active','role','start_date','end_date']
+        read_only_fields = ['id']
+        
+    

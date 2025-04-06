@@ -15,7 +15,7 @@ from mainapps.management.models import CompanyProfile
 from mainapps.management.models_activity.activity_logger import log_user_activity
 from mainapps.permit.permit import HasModelRequestPermission
 
-from ..models import ActivityLog, StaffGroup, StaffRole
+from ..models import ActivityLog, StaffGroup, StaffRole, StaffRoleAssignment
 from .serializers import (
     CompanyProfileSerializer, 
     CompanyAddressSerializer, 
@@ -114,9 +114,11 @@ class OwnerCompanyProfileDetailView(generics.RetrieveAPIView):
         print(self.request.user)
         return get_object_or_404(CompanyProfile, owner=self.request.user)
 
+
+
 class CreateGroupView(APIView):
     permission_classes = [IsAuthenticated]
-
+        
     def post(self, request, *args, **kwargs):
         
         if not request.user.is_main:
@@ -152,13 +154,23 @@ class CreateGroupView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
-class GroupDetailView(generics.RetrieveAPIView):
+class GroupDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = StaffGroupSerializer
     queryset=StaffGroup.objects.all()
     permission_classes = [permissions.IsAuthenticated, HasModelRequestPermission]
     lookup_field= 'id'
 
-    
+
+class StaffGroupView(APIView):
+    permission_classes=[IsAuthenticated,HasModelRequestPermission]
+    def get(self,request):
+        profile = self.request.user.profile
+        groups= StaffGroup.objects.filter(
+            profile=profile
+        )
+        serializer=StaffGroupSerializer(groups,many=True)
+        return Response(serializer.data)
+        
 
 class CreateRoleView(APIView):
     permission_classes = [IsAuthenticated,HasModelRequestPermission]
@@ -198,16 +210,6 @@ class CreateRoleView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StaffGroupView(APIView):
-    permission_classes=[IsAuthenticated,HasModelRequestPermission]
-    def get(self,request):
-        profile = self.request.user.profile
-        groups= StaffGroup.objects.filter(
-            profile=profile
-        )
-        serializer=StaffGroupSerializer(groups,many=True)
-        return Response(serializer.data)
-    
     
 class StaffRoleView(APIView):
     permission_classes=[IsAuthenticated,HasModelRequestPermission]
@@ -222,6 +224,14 @@ class StaffRoleView(APIView):
     
 
 
+class RoleDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = StaffRoleSerializer
+    queryset=StaffRole.objects.all()
+    permission_classes = [permissions.IsAuthenticated, HasModelRequestPermission]
+    lookup_field= 'id'
+
+
+
 class UserActivityLogsAPIView(APIView):
     permission_classes = [IsAuthenticated, HasModelRequestPermission]
     def get(self, request, user_id):
@@ -230,11 +240,8 @@ class UserActivityLogsAPIView(APIView):
         serializer = ActivityLogSerializer(logs, many=True)
         return Response(serializer.data)
 
-
-class RoleDetailView(generics.RetrieveAPIView):
-    serializer_class = StaffRoleSerializer
-    queryset=StaffRole.objects.all()
-    permission_classes = [permissions.IsAuthenticated, HasModelRequestPermission]
-    lookup_field= 'id'
-
-    
+class RoleDeactivateView(APIView):
+    permission_classes=[IsAuthenticated,HasModelRequestPermission]
+    def post(self,request,role_id):
+        role= get_object_or_404(StaffRoleAssignment,id=role_id).delete()
+        return Response({'detail':'Role deleted successfully'},status=status.HTTP_200_OK)

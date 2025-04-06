@@ -550,7 +550,14 @@ class StaffRoleAssignment(ProfileMixin):
                 user=self.user, 
                 role=self.role,
                 is_active=True
-            ).update(is_active=False)
+            ).delete()
+        if self.end_date and self.end_date < self.start_date:
+            raise ValueError("End date cannot be before start date.")
+        if self.end_date and self.end_date < timezone.now():
+            raise ValueError("End date cannot be in the past.")
+        if self.start_date and self.start_date < timezone.now():
+            self.start_date = timezone.now()
+        
         super().save(*args, **kwargs)
 
     @property

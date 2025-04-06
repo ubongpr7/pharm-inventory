@@ -14,6 +14,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from mainapps.common.models import Currency, TypeOf, Unit
 from mainapps.content_type_linking_models.models import UUIDBaseModel
@@ -313,7 +314,9 @@ class InventoryMixin(UUIDBaseModel):
     """
 
     inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE,null=True)
-
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     objects = InventoryManager()
 
     class Meta:

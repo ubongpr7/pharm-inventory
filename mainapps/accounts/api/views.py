@@ -10,11 +10,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework.generics import ListAPIView 
-
+from django.db.models import Prefetch
 from rest_framework_simplejwt.views import TokenObtainPairView
 from mainapps.accounts.models import User,VerificationCode
 from mainapps.accounts.views import send_html_email
 from mainapps.common.settings import get_company_or_profile
+from mainapps.management.models import StaffRoleAssignment
 from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from mainapps.permit.permit import HasModelRequestPermission
@@ -217,9 +218,19 @@ class StaffUserRegistrationAPIView(APIView):
 
 
 class StaffUsersView(ListAPIView):
-    permission_classes=[IsAuthenticated,HasModelRequestPermission]
-    serializer_class=MyUserSerializer
+    permission_classes = [IsAuthenticated, HasModelRequestPermission]
+    serializer_class = MyUserSerializer
+    
     def get_queryset(self):
-        company=get_company_or_profile(self.request.user)
-        return User.objects.filter(profile=company)
+        company = get_company_or_profile(self.request.user)
+        user= User.objects.filter(profile=company).prefetch_related(
+            Prefetch(
+                'roles',
+                queryset=StaffRoleAssignment.objects.select_related('role'),
+                to_attr='active_roles'
+            )
+        )
+        print(user)
+        return user
+
 

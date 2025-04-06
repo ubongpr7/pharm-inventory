@@ -22,19 +22,33 @@ from mainapps.content_type_linking_models.models import Attachment
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.utils.statuses import *
+from decimal import Decimal, ROUND_HALF_UP
 
 class PurchaseOrderLineItem(models.Model):
     purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='line_items')
-    stock_item = models.ForeignKey('stock.StockItem', on_delete=models.CASCADE)
+    stock_item = models.ForeignKey('stock.StockItem', on_delete=models.CASCADE,null=True, blank=True)
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, help_text="Discount rate as a percentage (e.g. 5.0)")
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, help_text="Discount rate as a percentage (e.g. 5.0)")
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-
     def save(self, *args, **kwargs):
-        self.total_price = self.quantity * self.unit_price
+        self.full_clean()
+        self.total_price = (self.quantity * self.unit_price) + self.tax_amount- self.discount
+        self.total_price = Decimal(self.total_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         super().save(*args, **kwargs)
+    def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError("Quantity must be greater than zero.")
+        if self.unit_price < 0:
+            raise ValidationError("Unit price must be non-negative.")
+    def __str__(self):
+        return f"{self.quantity} x {self.stock_item} @ {self.unit_price} (Total: {self.total_price})"
 
 class TotalPriceMixin(models.Model):
+
     """Mixin which provides 'total_price' field for an order."""
 
     class Meta:
@@ -143,8 +157,6 @@ class Order(InventoryMixin):
         help_text=_('Company address for this order of the affiliated business'),
         related_name='+',
     )
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
     
     
     def generate_reference(self, prefix):
