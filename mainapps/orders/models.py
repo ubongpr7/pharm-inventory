@@ -28,12 +28,14 @@ class PurchaseOrderLineItem(models.Model):
     purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='line_items')
     stock_item = models.ForeignKey('stock.StockItem', on_delete=models.CASCADE,null=True, blank=True)
     quantity = models.PositiveIntegerField()
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=15, decimal_places=2)
     discount_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, help_text="Discount rate as a percentage (e.g. 5.0)")
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, help_text="Discount rate as a percentage (e.g. 5.0)")
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    total_price = models.DecimalField(max_digits=18, decimal_places=2, editable=False)
+    description=models.TextField(null=True, blank=True)
+    
     def save(self, *args, **kwargs):
         self.full_clean()
         self.total_price = (self.quantity * self.unit_price) + self.tax_amount- self.discount
@@ -71,7 +73,7 @@ class TotalPriceMixin(models.Model):
         blank=True,
     )
 
-class Order(InventoryMixin):
+class Order(models.Model):
     """
     Abstract model for an order.
 
@@ -96,7 +98,19 @@ class Order(InventoryMixin):
         Metaclass options. Abstract ensures no database table is created.
         """
         abstract = True
+    profile=models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name='+',
 
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
     description = models.CharField(
         max_length=250,
         blank=True,
@@ -109,7 +123,7 @@ class Order(InventoryMixin):
         blank=True, verbose_name=_('Link'), help_text=_('Link to an external page')
     )
 
-    delivery_date = models.DateField(
+    delivery_date = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name=_('Delivery Date'),
@@ -117,7 +131,20 @@ class Order(InventoryMixin):
             'Expected date for order delivery. Order will be overdue after this date.'
         ),
     )
-
+    received_date=models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name=_('Received Date'),
+        help_text=_(
+            'Date order was received'
+        ),
+    )
+    complete_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name=_('Completion Date'),
+        help_text=_('Date order was completed'),
+    )
     
     created_by = models.ForeignKey(
         User,
@@ -162,7 +189,7 @@ class Order(InventoryMixin):
     def generate_reference(self, prefix):
         """Atomically generate unique PO reference in PREFIX-YYYYMMDD-SEQ format"""
         with transaction.atomic():
-            profile = CompanyProfile.objects.select_for_update().get(pk=self.inventory.profile.pk)
+            profile = self.profile
             
             date_str = timezone.now().strftime("%Y%m%d")
             
@@ -176,12 +203,27 @@ class Order(InventoryMixin):
             # Build reference components
             components = [
                 prefix.upper(),
-                date_str,
-                f"{self.inventory.id:03d}", 
+                date_str, 
                 f"{profile.po_sequence:04d}"
             ]
             
             return '-'.join(components)
+
+
+class PurchaseOrderStatus(models.TextChoices):
+    """Defines a set of status codes for a PurchaseOrder."""
+
+    PENDING = 'pending', _('Pending')
+    ISSUED = 'issued', _('Isshued')
+    COMPLETED = 'completed', _('Complete')
+    CANCELLED = 'cancelled', _('Cancelled')
+    OVERDUE = 'overdue', _('Overdue')
+    RECEIVED= 'received', _('Received')
+    REJECTED = 'rejected',_('Rejected')
+    APPROVED='approved','Approved'
+    LOST = 'lost', _('Lost')
+    RETURNED = 'returned', _('Returned')
+
 
 class PurchaseOrder(TotalPriceMixin, Order):
     """A PurchaseOrder represents goods shipped inwards from an external supplier.
@@ -201,11 +243,14 @@ class PurchaseOrder(TotalPriceMixin, Order):
         editable=False,
     )
 
-    status = models.PositiveIntegerField(
-        default=PurchaseOrderStatus.PENDING.value,
-        choices=PurchaseOrderStatus.items(),
+    status = models.CharField(
+        default=PurchaseOrderStatus.PENDING,
+        choices=PurchaseOrderStatus.choices,
         help_text=_('Purchase order status'),
+        max_length=20,
+        verbose_name=_('Status'),
     )
+
 
     supplier = models.ForeignKey(
         Company,
@@ -234,14 +279,14 @@ class PurchaseOrder(TotalPriceMixin, Order):
         verbose_name=_('Received by'),
     )
 
-    issue_date = models.DateField(
+    issue_date = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name=_('Issue Date'),
         help_text=_('Date order was issued'),
     )
 
-    complete_date = models.DateField(
+    complete_date = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name=_('Completion Date'),
@@ -265,7 +310,7 @@ class SalesOrder(TotalPriceMixin, Order):
         help_text=_('Customer order reference code'),
     )
 
-    shipment_date = models.DateField(
+    shipment_date = models.DateTimeField(
         blank=True, null=True, verbose_name=_('Shipment Date')
     )
 
@@ -365,6 +410,14 @@ class SalesOrderShipment(InventoryMixin):
     )
 
 
+class ReturnOrderStatus(models.TextChoices):
+    PENDING = 'pending', _('Pending')
+    AWAITING_PICKUP = 'awaiting_pickup', _('Awaiting Pickup')
+    IN_TRANSIT = 'in_transit', _('In Transit')
+    COMPLETED = 'completed', _('Completed')
+    CANCELLED = 'cancelled', _('Cancelled')
+
+
 class ReturnOrder(TotalPriceMixin, Order):
     """A ReturnOrder represents goods returned from a customer, e.g. an RMA or warranty.
 
@@ -395,9 +448,9 @@ class ReturnOrder(TotalPriceMixin, Order):
     )
 
 
-    status = models.PositiveIntegerField(
-        default=ReturnOrderStatus.PENDING.value,
-        choices=ReturnOrderStatus.items(),
+    status = models.CharField(
+        default=ReturnOrderStatus.PENDING,
+        choices=ReturnOrderStatus.choices,
         verbose_name=_('Status'),
         help_text=_('Return order status'),
     )
@@ -409,28 +462,59 @@ class ReturnOrder(TotalPriceMixin, Order):
         help_text=_('Customer order reference code'),
     )
 
-    issue_date = models.DateField(
+    issue_date = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name=_('Issue Date'),
         help_text=_('Date order was issued'),
     )
-
-    complete_date = models.DateField(
+    return_reason = models.TextField(
         blank=True,
         null=True,
-        verbose_name=_('Completion Date'),
-        help_text=_('Date order was completed'),
+        verbose_name=_('Return Reason'),
+        help_text=_('Detailed reason for the return')
     )
+    
+    def save(self, ):
+        if not self.reference:
+            self.reference = self.generate_reference("RO")
+        return super().save()
+    
     attachment= GenericRelation(Attachment,related_query_name='return_oders')
    
+class ReturnOrderLineItem(models.Model):
+    return_order = models.ForeignKey(
+        ReturnOrder,
+        on_delete=models.CASCADE,
+        related_name='line_items'
+    )
+    original_line_item = models.ForeignKey(
+        PurchaseOrderLineItem,
+        on_delete=models.PROTECT,
+        related_name='returns'
+    )
+    quantity_returned = models.PositiveIntegerField()
+    return_reason = models.TextField(blank=True)
     
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0.0)
+    
+    @property
+    def total_price(self):
+        return (self.unit_price * self.quantity_returned) - self.discount
+        
+    def clean(self):
+        if self.quantity_returned > self.original_line_item.quantity:
+            raise ValidationError("Return quantity exceeds original order quantity")
 
 registerable_models=[
     ReturnOrder,
     PurchaseOrder,
     SalesOrderShipment,
     SalesOrder,
+    ReturnOrderLineItem,
+    PurchaseOrderLineItem,
 
     ]
 

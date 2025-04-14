@@ -16,11 +16,12 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from mainapps.common.models import Currency, TypeOf, Unit
+from mainapps.common.models import Currency, TypeOf, Unit, User
 from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.management.models import CompanyProfile, InventoryPolicy, InventoryProperty
 from django.db import models, transaction
 from django.db.models import F
+
 
 
 
@@ -524,6 +525,70 @@ class InventoryPricing(InventoryMixin):
         help_text=_('Maximum historical sale price'),
     )
 
+class TransactionType(models.TextChoices):
+    """Defines types of inventory transactions."""
+    PO_RECEIVE = 'PO_RECEIVE', 'Purchase Order Receipt'
+    PO_COMPLETE = 'PO_COMPLETE', 'Purchase Order Completion'
+    ADJUSTMENT = 'ADJUSTMENT', 'Inventory Adjustment'
+    SALE = 'SALE', 'Customer Sale'
+    RETURN = 'RETURN', 'Inventory Return'
+    LOSS = 'LOSS', 'Inventory Loss'
+    
+class InventoryTransaction(models.Model):
+    
+    profile= models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name='inventory_transactions',
+    )
+
+    item = models.ForeignKey(
+        'stock.StockItem',
+        on_delete=models.CASCADE,
+        related_name='transactions'
+    )
+    quantity = models.IntegerField(
+        help_text="Positive for additions, negative for deductions"
+    )
+    unit_price = MoneyField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.0,
+        null=True,
+        blank=True,
+    )
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=TransactionType.choices,
+        default='PO_COMPLETE'
+    )
+    reference = models.CharField(
+        max_length=64,
+        help_text="Associated document number (PO, SO, etc)"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='inventory_transactions'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional transaction details"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.item.name} ({self.quantity})"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Inventory Transaction'
+        verbose_name_plural = 'Inventory Transactions'
     
 
-registerable_models=[Inventory,InventoryCategory,InventoryPricing ]
+registerable_models=[Inventory,InventoryCategory,InventoryPricing,InventoryTransaction ]

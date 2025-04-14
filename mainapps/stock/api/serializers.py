@@ -2,10 +2,61 @@
 from rest_framework import serializers
 
 from mainapps.utils.generators import generate_batch_code
-from ..models import StockItem, StockLocation
+from ..models import StockItem, StockLocation,StockLocationType
+# serializers.py
+from rest_framework import serializers
 
+class StockLocationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StockLocationType
+        fields = '__all__'
+        
+class StockLocationSerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=StockLocation.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    
+    location_type = serializers.PrimaryKeyRelatedField(
+        queryset=StockLocationType.objects.all(),
+        allow_null=True,
+        required=False
+    )
+
+    class Meta:
+        model = StockLocation
+        fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'name',
+            'code',
+            'official',
+            'structural',
+            'parent',
+            'external',
+            'location_type',
+            'lft',
+            'rght',
+            'tree_id',
+            'level',
+            'description',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'lft',
+            'rght',
+            'tree_id',
+            'level',
+            'code',
+        ]
+        
 class StockItemCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating StockItem instances with user-controlled fields"""
+    quantity_w_unit = serializers.SerializerMethodField()
     
     class Meta:
         model = StockItem
@@ -13,6 +64,7 @@ class StockItemCreateSerializer(serializers.ModelSerializer):
             'id',
             'inventory',
             'name',
+            'quantity_w_unit',
             'created_at',
             'updated_at',
             'quantity',
@@ -20,6 +72,7 @@ class StockItemCreateSerializer(serializers.ModelSerializer):
             'parent',
             'serial',
             'batch',
+            'notes',
             'packaging',
             'status',
             'expiry_date',
@@ -30,7 +83,7 @@ class StockItemCreateSerializer(serializers.ModelSerializer):
             'notes',
             'link',
             'customer',
-            'packaging'
+            'packaging',
             'sku',
         ]
 
@@ -38,15 +91,10 @@ class StockItemCreateSerializer(serializers.ModelSerializer):
             'serial': {'required': False},
             'batch': {'required': False},
             'location': {'required': True},
-            'inventory': {'required': True}
         }
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at','quantity_w_unit']
 
-    def validate(self, data):
-        """Add custom validation for stock item creation"""
-        
-        if data['quantity'] <= 0:
-            raise serializers.ValidationError("Quantity must be positive")
-
-        return data
-
+    def get_quantity_w_unit(self, obj):
+            if obj.inventory:
+                return f"{obj.quantity} {obj.inventory.unit.abbreviated_name}"
+            return obj.quantity

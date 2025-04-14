@@ -79,3 +79,6 @@ django-filter
 django-schema-graph
 pydot==3.0.4
 graphviz
+weasyprint
+django-sync-model
+django-synchro

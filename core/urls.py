@@ -36,6 +36,8 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path("schema/", Schema.as_view()),
 
+    # db sync
+
     path('api/v1/accounts/', include("mainapps.accounts.api.urls")),
     path('inventory_api/', include("mainapps.inventory.api.urls",)),
     path('company_api/', include("mainapps.company.api.urls",)),

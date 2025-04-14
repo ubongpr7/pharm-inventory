@@ -4,14 +4,27 @@ from __future__ import annotations
 
 
 from django.core.validators import MinValueValidator
-from django.db import models, transaction
+from django.db import models
+
+class Stock(models.Model):
+    """
+    Represents a stock item in the pharmaceutical inventory system.
+    
+    Attributes:
+        product (ForeignKey): Reference to the Product model
+        batch_number (str): Unique identifier for the product batch
+        quantity (int): Current stock quantity
+        expiry_date (Date): Expiration date of the batch
+        location (str): Storage location in warehouse
+        last_updated (DateTime): Timestamp of last stock update
+    """
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.text import slugify
 from django.utils.crypto import get_random_string
 
-
+from  django.utils import timezone
 from mainapps.common.custom_fields import MoneyField
 from mainapps.common.models import AttributeStore, User
 from mainapps.company.models import Company
@@ -20,26 +33,25 @@ from mainapps.orders.models import *
 from django.utils.crypto import get_random_string
 
 from django.utils.text import slugify
-# from mainapps.utils.statuses import StockStatus
 from mainapps.utils.generators import generate_batch_code
 from mainapps.utils.validators import validate_batch_code, validate_serial_number
 
 
 
-class StockStatus(models.IntegerChoices):
+class StockStatus(models.TextChoices):
     """
     Integer choices for stock item status with additional metadata.
     Inherits from IntegerChoices for Django integration.
     """
     
-    OK = 10, _('OK')
-    ATTENTION = 50, _('Attention needed')
-    DAMAGED = 55, _('Damaged')
-    DESTROYED = 60, _('Destroyed')
-    REJECTED = 65, _('Rejected')
-    LOST = 70, _('Lost')
-    QUARANTINED = 75, _('Quarantined')
-    RETURNED = 85, _('Returned')
+    OK = 'ok', _('OK')
+    ATTENTION = 'attention_needed', _('Attention needed')
+    DAMAGED = 'damaged', _('Damaged')
+    DESTROYED = 'destroyed', _('Destroyed')
+    REJECTED = 'rejected', _('Rejected')
+    LOST = 'lost', _('Lost')
+    QUARANTINED = 'quarantined', _('Quarantined')
+    RETURNED = 'returned', _('Returned')
 
 class TrackingType(models.IntegerChoices):
     """
@@ -108,24 +120,28 @@ class StockLocationType(models.Model):
         """Metaclass defines extra model properties."""
         verbose_name = _('Stock Location Type')
         verbose_name_plural = _('Stock Location Types')
+        ordering = ['id']
 
     def __str__(self):
         return self.name
 
 
-class StockLocation(InventoryMixin,MPTTModel):
-    
+class StockLocation(MPTTModel):
     """
-    Represents an organizational tree for StockItem objects.
-
-    A "StockLocation" can be considered a warehouse or storage location.
-    Stock locations can be hierarchical as required.
-
-    Attributes:
-        - manager (User): User who manages the stock location (optional).
-        - structural (bool): Indicates if stock items can be directly located into this stock location.
-        - external (bool): Indicates if this is an external stock location.
-        - location_type (StockLocationType): The type of the stock location.
+    Represents an organizational tree for StockItem objects (warehouse/storage locations).
+    
+    Key Attributes:
+        code: Auto-generated unique location identifier
+        name: Human-readable location name  
+        parent: Parent location in hierarchy
+        location_type: Classification of location type
+        structural: If location can directly contain stock items
+        external: If location is outside main warehouse
+        description: Additional location details
+        
+    Methods:
+        save(): Auto-generates location code on first save
+        __str__(): Returns formatted location identifier
     """
 
     ITEM_PARENT_KEY = 'location'
@@ -140,25 +156,25 @@ class StockLocation(InventoryMixin,MPTTModel):
         """
         verbose_name = _('Stock Location')
         verbose_name_plural = _('Stock Locations')
-        constraints = [
-            models.UniqueConstraint(
-                fields=['inventory', 'name'],
-                name='unique_location_name_per_inventory'
-            )
-        ]
-
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Stock Location"
-        return "Stock Locations "
-    @property
-    def get_label(self):
-        return 'stocklocation'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
-
+    code = models.CharField(
+        max_length=100,
+        unique=True,
+        editable=False,
+        null=True,
+        blank=True,
+        verbose_name=_('Location Code'),
+        help_text=_('Unique location identifier (auto-generated)')
+    ) 
+    profile=models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='stock_locations',
+        verbose_name=_('Profile'),
+        help_text=_('Profile for this stock location'),
+    )
+    
     name=models.CharField(max_length=200, null=True, blank=False)
     official = models.ForeignKey(
         User,
@@ -205,8 +221,47 @@ class StockLocation(InventoryMixin,MPTTModel):
         help_text=_('Stock location type of this location'),
     )
 
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Description'),
+        help_text=_('Longer form description of the stock location (optional)'),
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name=_('Created at'),
+        help_text=_('Date that this stock location was created'),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('Updated at'),
+        help_text=_('Date that this stock location was last updated'),
+    )
     def __str__(self):
-        return f"{self.name} ({self.location_type.name})" if self.location_type else self.name
+        return f"{self.name}- {self.code} ({self.location_type.name})" if self.location_type else self.name
+    def save(self, *args, **kwargs):
+        """Auto-generate location code on first save"""
+        if not self.pk and self.location_type and self.profile:
+            base = self.location_type.name.upper().replace(' ', '_')
+            profile_id = self.profile.id
+            
+            # Get highest existing sequence number for this type+profile combination
+            last_code = StockLocation.objects.filter(
+                location_type=self.location_type,
+                profile=self.profile,
+                code__startswith=f"{base}_{profile_id}_"
+            ).order_by('-code').values_list('code', flat=True).first()
+
+            sequence = 1
+            if last_code:
+                try:
+                    sequence = int(last_code.split('_')[-1]) + 1
+                except (ValueError, IndexError):
+                    pass
+
+            self.code = f"{base}_{profile_id}_{sequence:03d}"
+
+        super().save(*args, **kwargs)
     
 class StockItem(MPTTModel, InventoryMixin):
     """
@@ -227,8 +282,6 @@ class StockItem(MPTTModel, InventoryMixin):
         - delete_on_deplete: If True, StockItem will be deleted when the stock level gets to zero
         - status: Status of this StockItem 
         - notes: Extra notes field
-        - build: Link to a Build (if this stock item was created from a build)
-        - is_building: Boolean field indicating if this stock item is currently being built (or is "in production")
         - purchase_order: Link to a PurchaseOrder (if this stock item was created from a PurchaseOrder)
         - sales_order: Link to a SalesOrder object (if the StockItem has been assigned to a SalesOrder)
         - purchase_price: The unit purchase price for this StockItem - this is the unit price at the time of purchase 
@@ -295,7 +348,7 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Unique serial number for this StockItem'),
-        validators=[validate_serial_number],
+        # validators=[validate_serial_number],
     )
     
     sku = models.CharField(
@@ -304,7 +357,7 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Stock keeping unit for this stock item'),
-        validators=[validate_serial_number],
+        # validators=[validate_serial_number],
     )
     serial_int = models.IntegerField(default=0)
     
@@ -321,16 +374,16 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Batch code for this stock item'),
-        default=generate_batch_code,
-        validators=[validate_batch_code],
+        # default=generate_batch_code,
+        # validators=[validate_batch_code],
     )
 
     quantity = models.DecimalField(
         verbose_name=_('Stock Quantity'),
         max_digits=15,
         decimal_places=5,
-        validators=[MinValueValidator(0)],
-        default=1,
+        validators=[MinValueValidator(Decimal('0'))],  
+        default=Decimal('1'),
     )
 
     purchase_order = models.ForeignKey(
@@ -379,10 +432,10 @@ class StockItem(MPTTModel, InventoryMixin):
         help_text=_('Delete this Stock Item when stock is depleted'),
     )
 
-    status = models.PositiveIntegerField(
+    status = models.CharField(
         default=StockStatus.OK,
         choices=StockStatus.choices,
-        validators=[MinValueValidator(0)],
+        max_length=50,
         verbose_name=_('Status'),
         help_text=_('Status of this StockItem '),
     )
@@ -396,41 +449,110 @@ class StockItem(MPTTModel, InventoryMixin):
         help_text=_('Single unit purchase price at the time of purchase'),
     )
     
-
-    @property
-    def status_text(self):
-        """Return the text representation of the status field."""
-        return StockStatus.text(self.status)
-
-    def get_absolute_url(self):
-        """Return the absolute URL for the StockItem detail view."""
-        return reverse('stock-item-detail', args=[str(self.pk)])
+    notes= models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Notes'),
+        help_text=_('Extra notes field'),
+    )
 
     def __str__(self):
         """Return a string representation of the StockItem."""
-        return f"{self.serial or ''} - {self.quantity} {self.part.unit}"
+        return f"{self.name} {self.serial or ''} - {self.quantity} {self.inventory.unit}"
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            company_id = self.inventory.profile.id
+            inv_id = self.inventory.id
+            inv_type = self.inventory.inventory_type.name[:4].upper()
+            category_code = self.inventory.category.name[:5].upper()
 
+            count = StockItem.objects.filter(inventory=self.inventory).count() + 1
+            self.sku = f"C{company_id}-{inv_type}-{category_code}-{inv_id:05d}-{count:05d}"
+        super().save(*args, **kwargs)
+        
     class Meta:
         verbose_name = _('Stock Item')
         verbose_name_plural = _('Stock Items')
-    @classmethod
-    def get_verbose_names(self,p=None):
-        if str(p) =='0':
-            return "Stock Item"
-        return "Stock Items"
-    @property
-    def get_label(self):
-        return 'stockitem'
-    @classmethod
-    def return_numbers(self,profile) :
-        return self.objects.filter(inventory__profile=profile).count()
+        ordering = ['name','serial']
+        indexes = [
+            models.Index(fields=['name', 'serial']),
+            models.Index(fields=['location']),
+            models.Index(fields=['parent']),
+            models.Index(fields=['batch']),
+        ]
 
 
+class StockPricing(models.Model):
+    """
+    Tracks pricing information and discounts for stock items.
+    
+    Key Attributes:
+        stock_item: Related stock item
+        selling_price: Current selling price
+        discount_flat: Fixed amount discount
+        discount_rate: Percentage discount
+        tax_rate: Applicable tax rate
+        price_effective_from: When price takes effect
+        price_effective_to: When price expires
+        
+    Methods:
+        get_discount_amount(): Calculates total discount
+        get_tax_amount(): Calculates tax after discount
+        get_total_price(): Calculates final price
+    """
+    stock_item = models.ForeignKey(StockItem, on_delete=models.CASCADE,related_name='pricings')
+    selling_price = models.DecimalField(max_digits=12, decimal_places=2)
+    discount_flat = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    discount_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)  
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)  
+
+    price_effective_from = models.DateTimeField(default=timezone.now)
+    price_effective_to = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.stock_item.name} - ₦{self.selling_price}"
+
+    def get_discount_amount(self):
+        return (self.selling_price * self.discount_rate / 100) + self.discount_flat
+
+    def get_tax_amount(self):
+        price_after_discount = self.selling_price - self.get_discount_amount()
+        return price_after_discount * self.tax_rate / 100
+
+    def get_total_price(self):
+        return self.selling_price - self.get_discount_amount() + self.get_tax_amount()
+
+
+class Sale(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='sales')
+    customer = models.CharField(max_length=100, blank=True,null=True)
+    total = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    sold_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Sale #{self.id} - {self.timestamp}"
+
+
+class SaleItem(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="items")
+    stock_item = models.ForeignKey(StockItem, on_delete=models.SET_NULL, null=True)
+    quantity = models.PositiveIntegerField(default=1)
+
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    tax = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_price = models.DecimalField(max_digits=18, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.stock_item} x {self.quantity}"
+    
 class StockItemTracking(InventoryMixin):
-    """Stock tracking entry - used for tracking history of a particular StockItem.
-
-
-    Attributes:
+    """
+    Tracks historical changes and movements of stock items.
+    
+    Key Attributes:
+        item: Related stock item
         item: ForeignKey reference to a particular StockItem
         date: Date that this tracking info was created
         tracking_type: The type of tracking information

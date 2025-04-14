@@ -39,9 +39,9 @@ THIRD_PARTY_APPS=[
     'djoser',
     'social_django',
     'schema_graph',
+    # 'sync_model',
 ]
 CORE_APPS = [
-    
     'mainapps.accounts',
     'mainapps.common',
     'mainapps.company',
@@ -69,6 +69,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'middleware.ip_address_middleware.IPBlackListMiddleware',
+    'middleware.time_zone.TimezoneMiddleware'
 ]
 
 BANNED_IPS=['127.0.0.']
@@ -293,4 +294,5 @@ CACHES = {
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-
+USE_L10N = True
+USE_THOUSAND_SEPARATOR = True
