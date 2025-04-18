@@ -193,7 +193,7 @@
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{ item.stock_item.name|default:"N/A" }}</td>
-            <td>{{ item.quantity }} {{item.stock_item.inventory.unit.abbreviated_name}}</td>
+            <td>{{ item.quantity }} {{item.stock_item.variant.product.unit.abbreviated_name}}</td>
             <td>{{ item.unit_price }}</td>
             <td>{{ item.discount }}</td>
             <td>{{ item.tax_amount }}</td>

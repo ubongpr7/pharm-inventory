@@ -306,6 +306,7 @@ class SalesOrder(TotalPriceMixin, Order):
     customer_reference = models.CharField(
         max_length=64,
         blank=True,
+        null=True,
         verbose_name=_('Customer Reference '),
         help_text=_('Customer order reference code'),
     )

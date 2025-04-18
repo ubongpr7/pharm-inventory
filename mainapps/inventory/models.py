@@ -16,7 +16,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from mainapps.common.models import Currency, TypeOf, Unit, User
+from mainapps.common.models import Currency, TypeOf, User
 from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.management.models import CompanyProfile, InventoryPolicy, InventoryProperty
 from django.db import models, transaction
@@ -126,7 +126,6 @@ class Inventory(InventoryProperty):
         name (str): Unique identifier for the inventory system
         description (str): Detailed operational context for the inventory
         category (InventoryCategory): Hierarchical classification
-        unit (Unit): Measurement system for stock items
         profile (CompanyProfile): Owning organization
         inventory_type (TypeOf): Operational classification type
     """
@@ -184,15 +183,7 @@ class Inventory(InventoryProperty):
         help_text=_("Hierarchical grouping for inventory items")
     )
     
-    unit = models.ForeignKey(
-        Unit,
-        verbose_name=_("Measurement Unit"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='inventories',
-        help_text=_("Standard measurement system for stock items (e.g., pieces, kg)")
-    )
+    
     IPN = models.CharField(
         max_length=100,
         blank=True,

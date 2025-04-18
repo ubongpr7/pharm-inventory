@@ -26,7 +26,7 @@ class PurchaseOrderLineItemSerializer(serializers.ModelSerializer):
         read_only_fields = ['id','total_price','quantity_w_unit']
     def get_quantity_w_unit(self, obj):
         if obj.purchase_order:
-            return f"{obj.quantity} {obj.stock_item.inventory.unit.abbreviated_name}"
+            return f"{obj.quantity} {obj.stock_item.variant.product.unit.abbreviated_name}"
         return obj.quantity
         
 

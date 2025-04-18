@@ -50,6 +50,7 @@ CORE_APPS = [
     'mainapps.management',
     'mainapps.orders',
     'mainapps.permit',
+    'mainapps.product',
     'mainapps.stock',
 ]
 INSTALLED_APPS=[

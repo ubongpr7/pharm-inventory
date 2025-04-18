@@ -288,6 +288,18 @@ class StockItem(MPTTModel, InventoryMixin):
           (if this item was purchased from an external supplier)
         - packaging: Description of how the StockItem is packaged (e.g. "reel", "loose", "tape" etc)
     """
+    
+    
+    variant = models.ForeignKey(
+        'product.ProductVariant',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='stock_items',
+        help_text=_('Product variant'),
+        verbose_name=_('Product Variant'),
+    )
+
     name=models.CharField(
         max_length=200,
         null=True,
@@ -348,7 +360,6 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Unique serial number for this StockItem'),
-        # validators=[validate_serial_number],
     )
     
     sku = models.CharField(
@@ -357,7 +368,6 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Stock keeping unit for this stock item'),
-        # validators=[validate_serial_number],
     )
     serial_int = models.IntegerField(default=0)
     
@@ -374,8 +384,6 @@ class StockItem(MPTTModel, InventoryMixin):
         blank=True,
         null=True,
         help_text=_('Batch code for this stock item'),
-        # default=generate_batch_code,
-        # validators=[validate_batch_code],
     )
 
     quantity = models.DecimalField(
@@ -455,10 +463,9 @@ class StockItem(MPTTModel, InventoryMixin):
         verbose_name=_('Notes'),
         help_text=_('Extra notes field'),
     )
-
     def __str__(self):
         """Return a string representation of the StockItem."""
-        return f"{self.name} {self.serial or ''} - {self.quantity} {self.inventory.unit}"
+        return f"{self.name} {self.serial or ''} - {self.quantity}"
     def save(self, *args, **kwargs):
         if not self.sku:
             company_id = self.inventory.profile.id
@@ -469,17 +476,17 @@ class StockItem(MPTTModel, InventoryMixin):
             count = StockItem.objects.filter(inventory=self.inventory).count() + 1
             self.sku = f"C{company_id}-{inv_type}-{category_code}-{inv_id:05d}-{count:05d}"
         super().save(*args, **kwargs)
-        
+
     class Meta:
         verbose_name = _('Stock Item')
         verbose_name_plural = _('Stock Items')
         ordering = ['name','serial']
         indexes = [
-            models.Index(fields=['name', 'serial']),
+            models.Index(fields=['variant']),  
             models.Index(fields=['location']),
-            models.Index(fields=['parent']),
-            models.Index(fields=['batch']),
+            models.Index(fields=['batch', 'serial']),
         ]
+    
 
 
 class StockPricing(models.Model):
@@ -522,30 +529,6 @@ class StockPricing(models.Model):
     def get_total_price(self):
         return self.selling_price - self.get_discount_amount() + self.get_tax_amount()
 
-
-class Sale(models.Model):
-    timestamp = models.DateTimeField(auto_now_add=True)
-    cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,related_name='sales')
-    customer = models.CharField(max_length=100, blank=True,null=True)
-    total = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
-    sold_at=models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Sale #{self.id} - {self.timestamp}"
-
-
-class SaleItem(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="items")
-    stock_item = models.ForeignKey(StockItem, on_delete=models.SET_NULL, null=True)
-    quantity = models.PositiveIntegerField(default=1)
-
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    tax = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    total_price = models.DecimalField(max_digits=18, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.stock_item} x {self.quantity}"
     
 class StockItemTracking(InventoryMixin):
     """

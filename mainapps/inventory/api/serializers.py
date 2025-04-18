@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from mainapps.common.models import TypeOf, Unit
+from mainapps.common.models import TypeOf
 from mainapps.inventory.models import Inventory, InventoryCategory
 from django.utils.translation import gettext_lazy as _
 
@@ -22,13 +22,8 @@ class InventorySerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    unit = serializers.PrimaryKeyRelatedField(
-        queryset=Unit.objects.all(),
-        required=False,
-        allow_null=True
-    )
+    
     category_name = serializers.CharField(source='category.name', read_only=True)
-    unit_name = serializers.CharField(source='unit.name', read_only=True)
     recall_policy_name = serializers.SerializerMethodField()  # Add this field
     reorder_strategy_name = serializers.SerializerMethodField()
     expiration_policy_name = serializers.SerializerMethodField()
@@ -38,8 +33,8 @@ class InventorySerializer(serializers.ModelSerializer):
         model = Inventory
         fields = [
 
-            'id','name','external_system_id','unit_name', 'description', 'inventory_type', 
-              'category','category_name', 'unit',
+            'id','name','external_system_id', 'description', 'inventory_type', 
+              'category','category_name',
             'minimum_stock_level', 're_order_point', 're_order_quantity', 'alert_threshold',
             'safety_stock_level', 'supplier_lead_time', 'internal_processing_time',
             'expiration_threshold', 'holding_cost_per_unit', 'ordering_cost',
@@ -56,7 +51,6 @@ class InventorySerializer(serializers.ModelSerializer):
             'updated_at': {'read_only': True},
             'created_at': {'read_only': True},
             'id': {'read_only': True},
-            'unit_name': {'read_only': True},
             'external_system_id': {'read_only': True},
             'recall_policy_name': {'read_only': True},
             'forecast_method_name': {'read_only': True},

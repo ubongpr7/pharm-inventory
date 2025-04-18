@@ -95,6 +95,6 @@ class StockItemCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at','quantity_w_unit']
 
     def get_quantity_w_unit(self, obj):
-            if obj.inventory:
-                return f"{obj.quantity} {obj.inventory.unit.abbreviated_name}"
+            if obj.variant:
+                return f"{obj.quantity} {obj.variant.product.unit.abbreviated_name}"
             return obj.quantity
