@@ -102,6 +102,8 @@ class Notification(GenericModel):
     message = models.TextField()
 
 
+def attachment_upload_path(instance, filename):
+    return f'attachments/{instance.attachment.content_type.model}/{instance.attachment.object_id}/{instance.attachment.id}/{instance.id}/{filename}'
 
 
 class ContentTypeLink(models.Model):
@@ -133,47 +135,5 @@ class ContentTypeLink(models.Model):
 
 
 
-class Attachment(GenericModel):
-    """
-    Model representing attachments for posts and events.
-
-    Fields:
-    """
+registerable_models=[UserSubscription,Notification,ContentTypeLink]
     
-    def __str__(self):
-        return f"Attachment for {self.content_type.model} ({self.object_id})"
-
-
-
-def attachment_upload_path(instance, filename):
-    return f'attachments/{instance.attachment.content_type.model}/{instance.attachment.object_id}/{instance.attachment.id}/{instance.id}/{filename}'
-
-
-class File(models.Model):
-    """
-    Model representing individual files associated with an attachment.
-
-    Fields:
-    - attachment: ForeignKey to Attachment model representing the parent attachment.
-    - file: FileField representing the attached file.
-    """
-    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE,blank=False,null=True, related_name='attached_files')
-    file = models.FileField(upload_to=attachment_upload_path, blank=True,null=True)
-
-    def __str__(self):
-        return f"File for {self.attachment}"
-
-registerable_models=[
-    Attachment,
-    File,
-    
-    
-]
-# registerable_models=[UserSubscription,Attachment,Notification,ContentTypeLink]
-    
-# ManufacturerPartAttachment
-# attachment: Link to StockItem attachment (optional)
-    # BuildOrderAttachment
-    # PurchaseOrderAttachment
-    # SalesOrderAttachment
-    # ReturnOrderAttachment

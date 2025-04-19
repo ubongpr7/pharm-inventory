@@ -12,8 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.signing import Signer
 from django.contrib.auth.models import Permission
-from mainapps.content_type_linking_models.models import Attachment
-from mainapps.common.models import Address, Country, Currency, TypeOf
+from mainapps.common.models import Address, Country, Currency, TypeOf,Attachment
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.common.settings import  DEFAULT_CURRENCY_CODE, currency_code_mappings
 from mainapps.inventory.helpers.file_editors import UniqueFilename

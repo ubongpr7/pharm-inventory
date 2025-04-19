@@ -17,8 +17,7 @@ from mptt.models import TreeForeignKey
 
 from django.utils import timezone
 from mainapps.company.models import  Company, CompanyAddress, Contact 
-from mainapps.common.models  import Currency, User
-from mainapps.content_type_linking_models.models import Attachment
+from mainapps.common.models  import Currency, User,Attachment
 from mainapps.inventory.helpers.field_validators import validate_currency_code
 from mainapps.inventory.models import InventoryMixin 
 from mainapps.utils.statuses import *

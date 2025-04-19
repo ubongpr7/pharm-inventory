@@ -242,5 +242,59 @@ class AttributeStore(GenericModel):
     def __str__(self):
         return self.attributes
 
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+
+def attachment_upload_path(instance, filename):
+    return f'attachments/{instance.attachment.content_type.model}/{instance.attachment.object_id}/{instance.attachment.id}/{instance.id}/{filename}'
+
+class Attachment(models.Model):
+    FILE_TYPES = (
+        ('IMAGE', 'Image'),
+        ('DOC', 'Document'),
+        ('OTHER', 'Other'),
+    )
+    
+    PURPOSES = (
+        ('MAIN_IMAGE', 'Main Product Image'),
+        ('GALLERY', 'Gallery Image'),
+        ('MANUAL', 'Product Manual'),
+        ('SPEC', 'Specification Sheet'),
+    )
+    
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    file = models.FileField(
+        upload_to=attachment_upload_path,
+        null=True,
+        blank=True,
+       
+    )
+    file_type = models.CharField(max_length=20, choices=FILE_TYPES)
+    purpose = models.CharField(max_length=20, choices=PURPOSES, default='GALLERY')
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_primary = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-is_primary', 'uploaded_at']
+        indexes = [
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+        verbose_name = _("Attachment")
+        verbose_name_plural = _("Attachments")
+
+    def __str__(self):
+        return f"{self.get_file_type_display()} for {self.content_object}"
+
 registerable_models=[Attribute,Value,Unit,AttributeStore,TypeOf]
 

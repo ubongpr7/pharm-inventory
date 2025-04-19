@@ -456,7 +456,14 @@ class StockItem(MPTTModel, InventoryMixin):
         verbose_name=_('Purchase Price'),
         help_text=_('Single unit purchase price at the time of purchase'),
     )
-    
+    override_salse_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Temporary price override for this stock batch"
+    )    
+
     notes= models.TextField(
         blank=True,
         null=True,

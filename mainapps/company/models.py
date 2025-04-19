@@ -12,8 +12,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy as __
-from mainapps.content_type_linking_models.models import Attachment
-from mainapps.common.models import Address, Currency
+from mainapps.common.models import Address, Currency,Attachment
 
 # from django_countries.fields import CountryField
 from mainapps.inventory.helpers.field_validators import validate_currency_code
