@@ -1,11 +1,51 @@
 from mainapps.permit.permit import HasModelRequestPermission
-from ..models import Product, ProductVariant
-from .serializers import ProductSerializer, ProductVariantSerializer
-from rest_framework import viewsets,permissions
+from ..models import Product, ProductCategory, ProductVariant
+from .serializers import ProductCategorySerializer, ProductSerializer, ProductVariantSerializer
+from rest_framework import viewsets,permissions,status
 from mainapps.management.models_activity.activity_logger import log_user_activity
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+
+class ProductCategoryViewSet(viewsets.ModelViewSet):
+    queryset = ProductCategory.objects.all()
+    serializer_class=ProductCategorySerializer
+    permission_classes = [permissions.IsAuthenticated,HasModelRequestPermission]
+    
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        company=user.profile
+        serializer.save(
+            profile=company
+
+        )
+        
+    def get_queryset(self):
+        return super().get_queryset().filter(profile=self.request.user.profile)
+            
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        instance = serializer.instance
+        log_user_activity(
+            user=request.user,
+            action='CREATE',
+            instance=instance,
+            details={
+                'initial_data': request.data,
+                'created_data': serializer.data,
+                'ip_address': request.META.get('REMOTE_ADDR'),
+                'user_agent': request.META.get('HTTP_USER_AGENT')
+            },
+            async_log=True
+        )
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -14,8 +54,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         company=user.profile
-
-
         serializer.save(
             created_by=user, 
             profile=company

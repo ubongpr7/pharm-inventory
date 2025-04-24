@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 
 from mainapps.common.models import Attachment
-from mainapps.product.models import ProductVariant
+from mainapps.product.models import Product, ProductVariant
 
 class AttachmentInline(GenericTabularInline):
     model = Attachment
@@ -15,3 +15,4 @@ class AttachmentInline(GenericTabularInline):
 class ProductVariantAdmin(admin.ModelAdmin):
     inlines = [AttachmentInline]
     list_display = ('sku', 'product', )
+admin.site.register(Product)

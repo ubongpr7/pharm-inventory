@@ -95,3 +95,9 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         if main_image:
             return self.context['request'].build_absolute_uri(main_image.file.url)
         return None
+    
+class ProductCategorySerializer(serializers.ModelSerializer):
+    parent_name=serializers.CharField(source='parent.name',read_only=True)
+    class Meta:
+        model = ProductCategory
+        fields = ['name','id','parent','description','parent_name']

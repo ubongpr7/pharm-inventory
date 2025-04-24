@@ -17,8 +17,6 @@ from mainapps.management.models_activity.activity_logger import log_user_activit
 class CompanyViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated,HasModelRequestPermission]
-    
-
     required_permission = {
         'create': CombinedPermissions.CREATE_COMPANY,
         'list': CombinedPermissions.READ_COMPANY,
