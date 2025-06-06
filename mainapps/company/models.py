@@ -157,21 +157,6 @@ class Company(models.Model):
         editable=False
 
     )
-    def get_user_label(self):
-        return 'Affiliated Businesses'
-    # def save(self,request, *args, **kwargs):
-    #     if not self.pk:
-    #         self.created_by = request.user
-    #         # if self.is_owner:
-    #         if self.created_by:
-    #             print(self.created_by)
-    #     super(Company, self).save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return f'/company/company_detail/{self.pk}/'
-    # def save(self):
-
-    #     return super().save()
     def __str__(self):
         if self.created_by:
             return f'{self.name} -> {self.created_by}'
@@ -289,6 +274,5 @@ class CompanyAddress(Address):
 
     def __str__(self):
         return self.title
-
 
 registerable_models=[Contact,Company]

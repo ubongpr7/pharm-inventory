@@ -73,6 +73,7 @@ class PricingStrategy(models.Model):
         choices=STRATEGY_CHOICES,
         default=PRODUCT_MARGIN
     )
+    
     margin_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,

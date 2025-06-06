@@ -18,11 +18,272 @@ from django.utils import timezone
 
 from mainapps.common.models import Currency, TypeOf, User
 from mainapps.content_type_linking_models.models import UUIDBaseModel
-from mainapps.management.models import CompanyProfile, InventoryPolicy, InventoryProperty
+from mainapps.management.models import CompanyProfile
 from django.db import models, transaction
 from django.db.models import F
 
 
+class RecallPolicies(models.TextChoices):
+    REMOVE = "0", _("Remove from Stock")
+    NOTIFY_CUSTOMERS = "1", _("Notify Customers")
+    REPLACE_PRODUCT = "3", _("Replace Item")
+    DESTROY = "4", _("Destroy Item")
+    REPAIR = "5", _("Repair Item")
+class ReorderStrategies(models.TextChoices):
+    FIXED_QUANTITY = "FQ", _("Fixed Quantity")
+    FIXED_INTERVAL = "FI", _("Fixed Interval")
+    DYNAMIC = "DY", _("Demand-Based")
+class ExpirePolicies(models.TextChoices):
+    REMOVE = "0", _("Dispose of Stock")
+    RETURN_MANUFACTURER = "1", _("Return to Manufacturer")
+class NearExpiryActions(models.TextChoices):
+    DISCOUNT = "DISCOUNT", _("Sell at Discount")
+    DONATE = "DONATE", _("Donate to Charity")
+    DESTROY = "DESTROY", _("Destroy Immediately")
+    RETURN = "RETURN", _("Return to Supplier")
+
+class ForecastMethods(models.TextChoices):
+    SIMPLE_AVERAGE = "SA", _("Simple Average")
+    MOVING_AVERAGE = "MA", _("Moving Average")
+    EXP_SMOOTHING = "ES", _("Exponential Smoothing")
+
+
+class InventoryPolicy(models.Model):
+    """
+    Central policy framework governing inventory operations.
+    Defines rules for stock management, replenishment, and risk mitigation.
+    
+    Policies:
+        - Stock replenishment rules and automation
+        - Safety stock calculations
+        - Expiration handling procedures
+        - Recall management protocols
+        - Cost optimization parameters
+    """
+    
+    class Meta:
+        abstract = True
+
+    minimum_stock_level = models.IntegerField(
+        _("Minimum Stock Level"),
+        default=0,
+        help_text=_("Trigger point for low stock alerts (units)")
+    )
+    
+    re_order_point = models.IntegerField(
+        _("Reorder Point"),
+        default=10,
+        help_text=_("Inventory level triggering replenishment (units)")
+    )
+    
+    re_order_quantity = models.IntegerField(
+        _("Reorder Quantity"),
+        default=200,
+        help_text=_("Standard quantity for automated replenishment")
+    )
+    
+    automate_reorder = models.BooleanField(
+        _("Auto-Replenish"),
+        default=False,
+        help_text=_("Enable automatic purchase orders at reorder point")
+    )
+
+    # Safety Stock Parameters
+    safety_stock_level = models.IntegerField(
+        _("Safety Stock"),
+        default=0,
+        help_text=_("Buffer stock for demand/supply fluctuations")
+    )
+    
+    supplier_lead_time = models.IntegerField(
+        _("Supplier Lead Time"),
+        default=0,
+        help_text=_("Average replenishment duration (days)")
+    )
+    
+    internal_processing_time = models.IntegerField(
+        _("Internal Processing Time"),
+        default=1,
+        help_text=_("Days needed for internal order processing")
+    )
+
+    # Replenishment Strategy
+
+    reorder_strategy = models.CharField(
+        _("Replenishment Strategy"),
+        max_length=2,
+        choices=ReorderStrategies.choices,
+        default=ReorderStrategies.FIXED_QUANTITY,
+        help_text=_("Methodology for inventory replenishment")
+    )
+
+    # Expiration Management
+    expiration_threshold = models.IntegerField(
+        _("Expiration Alert Window"),
+        default=30,
+        help_text=_("Days before expiry to trigger alerts")
+    )
+    
+    batch_tracking_enabled = models.BooleanField(
+        _("Batch Tracking"),
+        default=False,
+        help_text=_("Enable batch/lot number tracking for items")
+    )
+
+    # Cost Parameters
+    holding_cost_per_unit = models.DecimalField(
+        _("Holding Cost"),
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        help_text=_("Annual storage cost per unit")
+    )
+    
+    ordering_cost = models.DecimalField(
+        _("Ordering Cost"),
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        help_text=_("Fixed cost per replenishment order")
+    )
+    
+    stockout_cost = models.DecimalField(
+        _("Stockout Cost"),
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        help_text=_("Estimated cost per unit of stockout")
+    )
+
+    # Expiration Handling Policies
+
+    expiration_policy = models.CharField(
+        _("Expiration Handling"),
+        max_length=200,
+        choices=ExpirePolicies.choices,
+        default=ExpirePolicies.REMOVE,
+        help_text=_("Procedure for expired inventory items")
+    )
+
+    # Recall Management Policies
+
+    recall_policy = models.CharField(
+        _("Recall Procedure"),
+        max_length=200,
+        choices=RecallPolicies.choices,
+        default=RecallPolicies.REMOVE,
+        help_text=_("Protocol for product recall scenarios")
+    )
+
+    # Near-Expiry Actions
+
+    near_expiry_policy = models.CharField(
+        _("Near-Expiry Action"),
+        max_length=20,
+        choices=NearExpiryActions.choices,
+        default=NearExpiryActions.DISCOUNT,
+        help_text=_("Action plan for items nearing expiration")
+    )
+
+    # Demand Forecasting
+
+    forecast_method = models.CharField(
+        _("Forecast Method"),
+        max_length=2,
+        choices=ForecastMethods.choices,
+        default=ForecastMethods.SIMPLE_AVERAGE,
+        help_text=_("Algorithm for demand prediction")
+    )
+
+    # Supplier Management
+    supplier_reliability_score = models.DecimalField(
+        _("Supplier Score"),
+        max_digits=5,
+        decimal_places=2,
+        default=100.0,
+        help_text=_("Performance rating (0-100 scale)")
+    )
+    
+    alert_threshold = models.IntegerField(
+        _("Alert Threshold"),
+        default=10,
+        help_text=_("Percentage variance to trigger stock alerts")
+    )
+
+    # System Integration
+    external_system_id = models.CharField(
+        _("External ID"),
+        max_length=200,
+        blank=True,
+        null=True,
+        # editable=False
+        help_text=_("Identifier in external ERP/WMS systems")
+    )
+    
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Last Updated By"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("User who last modified policies")
+    )
+
+class InventoryProperty(InventoryPolicy):
+    class Meta:
+        abstract=True
+
+    assembly = models.BooleanField(
+        default=False,
+        verbose_name=_('Assembly'),
+        help_text=_('Can this Inventory be built from other Inventory?'),
+    )
+
+    component = models.BooleanField(
+        default=False,
+        verbose_name=_('Component'),
+        help_text=_('Can this Inventory be used to build other Inventory?'),
+    )
+
+    trackable = models.BooleanField(
+        default=True,
+        verbose_name=_('Trackable'),
+        help_text=_('Does this Inventory have tracking for unique items?'),
+    )
+
+    testable = models.BooleanField(
+        default=False,
+        verbose_name=_('Testable'),
+        help_text=_('Can this Inventory have test results recorded against it?'),
+    )
+
+    purchaseable = models.BooleanField(
+        default=True,
+        verbose_name=_('Purchaseable'),
+        help_text=_('Can this Inventory be purchased from external suppliers?'),
+    )
+
+    salable = models.BooleanField(
+        default=True,
+        verbose_name=_('Salable'),
+        help_text=_('Can this Inventory be sold to customers?'),
+    )
+
+    active = models.BooleanField(
+        default=True, verbose_name=_('Active'), help_text=_('Is this Inventory active?')
+    )
+
+    locked = models.BooleanField(
+        default=False,
+        verbose_name=_('Locked'),
+        help_text=_('Locked Inventory cannot be edited'),
+    )
+
+    virtual = models.BooleanField(
+        default=False,
+        verbose_name=_('Virtual'),
+        help_text=_('Is this a virtual inventory, such as a software product or license?'),
+    )
 
 
 
@@ -34,7 +295,7 @@ class InventoryCategory(MPTTModel):
         default=False,
         verbose_name=_('Structural'),
         help_text=_(
-            'Parts may not be directly assigned to a structural category, '
+            'Inventory may not be directly assigned to a structural category, '
             'but may be assigned to child categories.'
         ),
     )
@@ -252,11 +513,6 @@ class Inventory(InventoryProperty):
             
             self.external_system_id = self.generate_external_id()
         super().save(*args, **kwargs)
-    
-    def get_absolute_url(self):
-        return f'/inventory/details/{self.pk}/'
-    def __str__(self):
-        return f'{self.name} '
     
     def clean(self):
         if self.minimum_stock_level> self.re_order_point:

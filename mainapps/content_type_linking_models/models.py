@@ -10,6 +10,13 @@ import uuid
 User= settings.AUTH_USER_MODEL
 
 class UUIDBaseModel(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name=_("ID"),
+        help_text=_("Unique identifier for the model instance.")
+    )
     
     class Meta:
         abstract=True

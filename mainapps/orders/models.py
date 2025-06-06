@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
 
+from mainapps.content_type_linking_models.models import UUIDBaseModel
 from mainapps.management.models import CompanyProfile
 from mptt.models import TreeForeignKey
 
@@ -23,7 +24,7 @@ from mainapps.inventory.models import InventoryMixin
 from mainapps.utils.statuses import *
 from decimal import Decimal, ROUND_HALF_UP
 
-class PurchaseOrderLineItem(models.Model):
+class PurchaseOrderLineItem(UUIDBaseModel):
     purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='line_items')
     stock_item = models.ForeignKey('stock.StockItem', on_delete=models.CASCADE,null=True, blank=True)
     quantity = models.PositiveIntegerField()
@@ -72,7 +73,7 @@ class TotalPriceMixin(models.Model):
         blank=True,
     )
 
-class Order(models.Model):
+class Order(UUIDBaseModel):
     """
     Abstract model for an order.
 

@@ -7,9 +7,12 @@ from django.db.models import F, ExpressionWrapper, DecimalField
 from decimal import Decimal
 import uuid
 
+from mainapps.content_type_linking_models.models import UUIDBaseModel
+from mainapps.management.models import ProfileMixin
+
 User = get_user_model()
 
-class SyncMixin(models.Model):
+class SyncMixin(UUIDBaseModel,ProfileMixin):
     """
     Abstract base model for enabling synchronization support.
 
@@ -30,7 +33,7 @@ class SyncMixin(models.Model):
 
 
 
-class POSTerminal(SyncMixin, models.Model):
+class POSTerminal(SyncMixin,):
     """
     Represents a physical or virtual POS terminal.
     
@@ -47,7 +50,7 @@ class POSTerminal(SyncMixin, models.Model):
         return f"{self.name} ({'Online' if self.is_online else 'Offline'})"
 
 
-class ConflictLog(models.Model):
+class ConflictLog(UUIDBaseModel,ProfileMixin):
     """
     Logs data conflicts during synchronization between local and remote databases.
 
@@ -76,7 +79,7 @@ class ConflictLog(models.Model):
     resolved_at = models.DateTimeField(null=True, blank=True)
 
 
-class POSSession(SyncMixin, models.Model):
+class POSSession(SyncMixin):
     """
     A POS session representing a cashier or terminal session.
 
@@ -95,7 +98,6 @@ class POSSession(SyncMixin, models.Model):
         - Automatically captures inventory on creation.
         - Logs 'session_create' if the terminal is offline.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     terminal = models.ForeignKey('POSTerminal', on_delete=models.PROTECT, to_field='sync_identifier')
     user = models.ForeignKey(User, on_delete=models.PROTECT, to_field='uuid')
     opening_time = models.DateTimeField(auto_now_add=True)
@@ -128,7 +130,7 @@ class POSSession(SyncMixin, models.Model):
         }
 
 
-class POSOrder(SyncMixin, models.Model):
+class POSOrder(SyncMixin):
     """
     A POS order that belongs to a session and adjusts inventory on finalization.
 
@@ -141,7 +143,6 @@ class POSOrder(SyncMixin, models.Model):
         - inventory_adjusted: Whether stock levels have been updated.
         - pending_sync_operations: Deferred actions due to offline status.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     STATUS_CHOICES = [
         ('draft', _('Draft')),
         ('finalized', _('Finalized')),
@@ -180,7 +181,7 @@ class POSOrder(SyncMixin, models.Model):
             })
 
 
-class POSOrderItem(SyncMixin, models.Model):
+class POSOrderItem(SyncMixin):
     """
     Line item in a POS order, representing one stock item sold.
 
@@ -194,7 +195,6 @@ class POSOrderItem(SyncMixin, models.Model):
         - tax_profile: Associated tax rate/profile.
         - line_total: Auto-calculated field (quantity * price).
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name='items', to_field='sync_identifier')
     stock_item = models.ForeignKey('stock.StockItem', on_delete=models.PROTECT, to_field='sync_identifier')
     quantity = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
@@ -215,7 +215,7 @@ class POSOrderItem(SyncMixin, models.Model):
         ]
 
 
-class IntegratedPayment(SyncMixin, models.Model):
+class IntegratedPayment(SyncMixin):
     """
     Represents a payment made through an external payment gateway.
 
@@ -227,7 +227,6 @@ class IntegratedPayment(SyncMixin, models.Model):
         - transaction_id: Gateway-provided reference ID.
         - synced_with_accounting: Whether this payment has been reconciled with accounting.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(POSOrder, on_delete=models.PROTECT, to_field='sync_identifier')
     gateway = models.ForeignKey('payment.PaymentGateway', on_delete=models.PROTECT, to_field='sync_identifier')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -241,7 +240,7 @@ class IntegratedPayment(SyncMixin, models.Model):
         ]
 
 
-class SyncManager(models.Model):
+class SyncManager(UUIDBaseModel, ProfileMixin):
     """
     Tracks the global sync state for a specific device.
 
@@ -257,7 +256,7 @@ class SyncManager(models.Model):
     device_identifier = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
 
-class IntegratedPayment(SyncMixin, models.Model):
+class IntegratedPayment(SyncMixin):
     """
     Represents a partial or full payment made toward a POSOrder.
     Supports split payments across methods like cash, card, mobile, or QR.
@@ -276,7 +275,6 @@ class IntegratedPayment(SyncMixin, models.Model):
         ('qr', 'QR Code')
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name='payments', to_field='sync_identifier')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
     amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
